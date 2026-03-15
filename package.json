@@ -1,0 +1,8 @@
+{
+  "name": "unitic-cms",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
