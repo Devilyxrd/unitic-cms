@@ -16,7 +16,9 @@ import {
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiPayloadTooLargeResponse,
   ApiTags,
+  ApiUnsupportedMediaTypeResponse,
 } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { MediaService } from './media.service';
@@ -41,7 +43,7 @@ export class MediaController {
   @Post()
   @ApiOperation({
     summary: 'Medya yukle',
-    description: 'Tek bir dosyayi medya kutuphanesine yukler.',
+    description: 'Tek bir dosyayi medya kutuphanesine yukler. Desteklenen turler: resimler (JPEG, PNG, GIF, WebP, SVG), PDF, ofis dokumentleri (DOC, DOCX, XLS, XLSX), metin dosyalari, ses, video.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -51,13 +53,16 @@ export class MediaController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Yuklenecek dosya',
+          description: 'Yuklenecek dosya (max 10 MB)',
         },
       },
       required: ['file'],
     },
   })
   @ApiOkResponse({ description: 'Medya basariyla yuklendi.' })
+  @ApiPayloadTooLargeResponse({ description: 'Dosya boyutu 10 MB limiti asamaz.' })
+  @ApiUnsupportedMediaTypeResponse({ description: 'Desteklenmeyen dosya turu.' })
+  @ApiForbiddenResponse({ description: 'Yalnizca ADMIN ve EDITOR yukleme yapabilir.' })
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {

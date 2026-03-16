@@ -51,8 +51,9 @@ export class EntriesController {
   list(
     @Query('contentType') contentTypeSlug?: string,
     @Query('status') status?: EntryStatus,
+    @CurrentUser() user?: AuthUser,
   ) {
-    return this.entriesService.list(contentTypeSlug, status);
+    return this.entriesService.list(contentTypeSlug, status, user);
   }
 
   @Get(':id')
@@ -61,8 +62,8 @@ export class EntriesController {
     description: 'Belirli bir kaydi degerleriyle getirir.',
   })
   @ApiOkResponse({ description: 'Kayit detayi donduruldu.' })
-  getById(@Param('id') id: string) {
-    return this.entriesService.getById(id);
+  getById(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
+    return this.entriesService.getById(id, user);
   }
 
   @Post()
@@ -90,8 +91,12 @@ export class EntriesController {
     description: 'Slug, durum ve alan degerlerini gunceller.',
   })
   @ApiOkResponse({ description: 'Kayit guncellendi.' })
-  update(@Param('id') id: string, @Body() body: UpdateEntryDto) {
-    return this.entriesService.update(id, body);
+  update(
+    @Param('id') id: string,
+    @Body() body: UpdateEntryDto,
+    @CurrentUser() user?: AuthUser,
+  ) {
+    return this.entriesService.update(id, body, user);
   }
 
   @Patch(':id/status')
@@ -100,8 +105,12 @@ export class EntriesController {
     description: 'Kaydi DRAFT veya PUBLISHED durumuna gecirir.',
   })
   @ApiOkResponse({ description: 'Kayit durumu guncellendi.' })
-  updateStatus(@Param('id') id: string, @Body() body: UpdateEntryStatusDto) {
-    return this.entriesService.updateStatus(id, body.status);
+  updateStatus(
+    @Param('id') id: string,
+    @Body() body: UpdateEntryStatusDto,
+    @CurrentUser() user?: AuthUser,
+  ) {
+    return this.entriesService.updateStatus(id, body.status, user);
   }
 
   @Delete(':id')
@@ -110,7 +119,7 @@ export class EntriesController {
     description: 'Belirli bir kaydi kalici olarak siler.',
   })
   @ApiOkResponse({ description: 'Kayit silindi.' })
-  remove(@Param('id') id: string) {
-    return this.entriesService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
+    return this.entriesService.remove(id, user);
   }
 }

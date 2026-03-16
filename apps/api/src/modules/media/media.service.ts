@@ -21,7 +21,50 @@ export class MediaService {
   private readonly maxFileSize = 10 * 1024 * 1024;
   private readonly uploadDir = join(process.cwd(), 'uploads');
 
+  private readonly allowedMimeTypes = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
+    'video/mp4',
+    'video/webm',
+    'audio/mpeg',
+    'audio/wav',
+    'audio/webm',
+  ]);
+
+  private readonly dangerousExtensions = new Set([
+    '.exe',
+    '.bat',
+    '.cmd',
+    '.sh',
+    '.bash',
+    '.ps1',
+    '.vbs',
+    '.jar',
+    '.app',
+    '.dmg',
+    '.zip',
+    '.rar',
+    '.7z',
+    '.tar',
+    '.gz',
+  ]);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private resolveExtension(filename: string): string {
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > 0 ? filename.substring(lastDotIndex).toLowerCase() : '';
+  }
 
   async list() {
     const items = await this.prisma.media.findMany({
@@ -52,9 +95,35 @@ export class MediaService {
       throw new BadRequestException('Dosya türü geçersiz.');
     }
 
+    if (!this.allowedMimeTypes.has(file.mimetype)) {
+      throw new BadRequestException(
+        `Dosya türü '${file.mimetype}' desteklenmiyor. İzin verilen türler: resimler, PDF, ofis dokümanları, ses/video dosyaları.`,
+      );
+    }
+
     const extension = this.resolveExtension(originalName);
-    if (extension && !/^\.[a-zA-Z0-9]+$/.test(extension)) {
+    if (!extension) {
+      throw new BadRequestException('Dosya uzantısı bulunamadı.');
+    }
+
+    if (!/^\.[a-zA-Z0-9]+$/.test(extension)) {
       throw new BadRequestException('Dosya uzantısı geçersiz.');
+    }
+
+    if (this.dangerousExtensions.has(extension)) {
+      throw new BadRequestException(
+        `Dosya uzantısı '${extension}' güvenlik sebebiyle izin verilmiyor.`,
+      );
+    }
+
+    // Check for double extensions (e.g., file.txt.exe)
+    const nameWithoutExtension = originalName.substring(
+      0,
+      originalName.lastIndexOf('.'),
+    );
+    const secondaryExtension = this.resolveExtension(nameWithoutExtension);
+    if (secondaryExtension && this.dangerousExtensions.has(secondaryExtension)) {
+      throw new BadRequestException('Çift uzantılı zararlı dosya algılandı.');
     }
 
     await mkdir(this.uploadDir, { recursive: true });
@@ -99,14 +168,5 @@ export class MediaService {
     await unlink(absolutePath).catch(() => undefined);
 
     return { success: true };
-  }
-
-  private resolveExtension(name: string) {
-    const lastDot = name.lastIndexOf('.');
-    if (lastDot === -1) {
-      return '';
-    }
-
-    return name.slice(lastDot);
   }
 }
