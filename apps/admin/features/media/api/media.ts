@@ -27,6 +27,7 @@ export async function uploadMedia(file: File, token: string | null) {
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"}/media`, {
     method: "POST",
+    credentials: "include",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: formData,
   });

@@ -5,9 +5,10 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    const databaseUrl =
-      process.env.DATABASE_URL ??
-      'postgresql://devilyxrd:devilyxrdwashere123@localhost:5432/cms';
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL ortam degiskeni zorunludur.');
+    }
     const adapter = new PrismaPg({ connectionString: databaseUrl });
 
     super({

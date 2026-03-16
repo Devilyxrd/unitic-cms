@@ -15,7 +15,8 @@ import {
   LogOut,
 } from "lucide-react";
 
-import { AUTH_COOKIE_NAME, NAV_ITEMS, ROUTES } from "@/constants/routes";
+import { NAV_ITEMS, ROUTES } from "@/constants/routes";
+import { logout } from "@/features/auth/api/login";
 import { cn } from "@/shared/utils/helpers";
 
 type SidebarProps = {
@@ -34,8 +35,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0`;
+  const handleLogout = async () => {
+    await logout();
     router.push(ROUTES.login);
     onClose();
   };
