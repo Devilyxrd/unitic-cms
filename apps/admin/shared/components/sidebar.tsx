@@ -77,7 +77,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-100">Devilyxrd</p>
-              <p className="truncate text-xs text-slate-300">Kurucu ve Yönetici</p>
+              <p className="truncate text-xs text-slate-300">Software Developer</p>
             </div>
           </div>
 
