@@ -28,17 +28,21 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<{
       headers: { authorization?: string };
+      cookies?: Record<string, string | undefined>;
       user?: AuthUser;
     }>();
 
     const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Kimlik doğrulama gerekli.');
-    }
+    const headerToken =
+      authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7).trim()
+        : null;
 
-    const token = authHeader.slice(7).trim();
+    const cookieToken = request.cookies?.admin_token?.trim() ?? null;
+    const token = headerToken || cookieToken;
+
     if (!token) {
-      throw new UnauthorizedException('Geçersiz erişim anahtarı.');
+      throw new UnauthorizedException('Kimlik dogrulama gerekli.');
     }
 
     try {
@@ -48,7 +52,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('Oturum geçersiz veya süresi dolmuş.');
+      throw new UnauthorizedException('Oturum gecersiz veya suresi dolmus.');
     }
   }
 }

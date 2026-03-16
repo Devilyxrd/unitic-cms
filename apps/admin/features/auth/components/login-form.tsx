@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { AUTH_COOKIE_NAME, ROUTES } from "@/constants/routes";
+import { ROUTES } from "@/constants/routes";
 import { useLogin } from "@/features/auth/hooks/use-login";
 
 export function LoginForm() {
@@ -17,11 +17,10 @@ export function LoginForm() {
     event.preventDefault();
 
     const response = await submit({ email, password });
-    if (!response.ok || !response.token) {
+    if (!response.ok) {
       return;
     }
 
-    document.cookie = `${AUTH_COOKIE_NAME}=${response.token}; path=/; max-age=86400; samesite=lax`;
     const nextPath = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
     router.push(nextPath && nextPath.startsWith("/") ? nextPath : ROUTES.dashboard);
   };
@@ -40,7 +39,7 @@ export function LoginForm() {
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="admin@unitic.dev"
+          placeholder="ornek@domain.com"
           required
         />
       </div>

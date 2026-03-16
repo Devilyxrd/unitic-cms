@@ -19,6 +19,7 @@ export async function apiClient<T>(path: string, options?: ApiClientOptions): Pr
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

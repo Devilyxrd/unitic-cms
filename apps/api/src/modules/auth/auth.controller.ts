@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -6,6 +6,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
@@ -17,16 +18,45 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private getCookieOptions() {
+    return {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24,
+    };
+  }
+
   @Public()
   @Post('login')
   @ApiOperation({
     summary: 'Kullanici girisi',
-    description: 'E-posta ve sifre ile giris yapar, JWT token dondurur.',
+    description: 'E-posta ve sifre ile giris yapar, HttpOnly oturum cerezini yazar.',
   })
   @ApiOkResponse({ description: 'Giris basarili.' })
   @ApiUnauthorizedResponse({ description: 'E-posta veya sifre hatali.' })
-  login(@Body() body: LoginDto) {
-    return this.authService.login(body.email, body.password);
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(body.email, body.password);
+
+    res.cookie('admin_token', result.token, this.getCookieOptions());
+
+    return {
+      ok: true,
+      user: result.user,
+    };
+  }
+
+  @Public()
+  @Post('logout')
+  @ApiOperation({
+    summary: 'Kullanici cikisi',
+    description: 'HttpOnly oturum cerezini temizler.',
+  })
+  @ApiOkResponse({ description: 'Cikis basarili.' })
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('admin_token', this.getCookieOptions());
+    return { ok: true };
   }
 
   @Get('me')

@@ -5,14 +5,11 @@ export type LoginPayload = {
 
 export type LoginResponse = {
   ok: boolean;
-  token?: string;
   message?: string;
 };
 
 type LoginApiResponse = {
-  token?: string;
-  accessToken?: string;
-  jwt?: string;
+  ok?: boolean;
   message?: string;
 };
 
@@ -26,6 +23,7 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -37,13 +35,15 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
       return { ok: false, message: data.message ?? "Giriş isteği başarısız oldu." };
     }
 
-    const token = data.token ?? data.accessToken ?? data.jwt;
-    if (!token) {
-      return { ok: false, message: "API tarafından token döndürülmedi." };
-    }
-
-    return { ok: true, token };
+    return { ok: data.ok ?? true };
   } catch {
     return { ok: false, message: "Kimlik doğrulama servisine ulaşılamıyor." };
   }
+}
+
+export async function logout(): Promise<void> {
+  await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => undefined);
 }
