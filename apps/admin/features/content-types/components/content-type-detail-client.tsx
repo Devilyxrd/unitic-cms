@@ -6,10 +6,11 @@ import Swal from "sweetalert2";
 import { addContentField, deleteContentField, getContentTypeById, updateContentField } from "@/features/content-types/api/content-types";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
 import { ToastStack } from "@/shared/components/toast-stack";
+import { apiClient } from "@/shared/lib/api-client";
 import { getAuthToken } from "@/shared/lib/auth-token";
 import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
 import { useToast } from "@/shared/hooks/use-toast";
-import type { ContentField, ContentType, FieldType } from "@/types";
+import type { ContentField, ContentType, FieldType, User } from "@/types";
 
 const FIELD_TYPES: FieldType[] = ["TEXT", "RICHTEXT", "NUMBER", "BOOLEAN", "DATE", "MEDIA"];
 
@@ -39,6 +40,8 @@ type Props = {
 export function ContentTypeDetailClient({ id }: Props) {
   const { toasts, dismissToast, showError, showSuccess } = useToast();
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [contentType, setContentType] = useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +53,19 @@ export function ContentTypeDetailClient({ id }: Props) {
   const [saving, setSaving] = useState(false);
   const [updatingFieldId, setUpdatingFieldId] = useState<string | null>(null);
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        setCurrentUser(me);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    void loadCurrentUser();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,8 +81,19 @@ export function ContentTypeDetailClient({ id }: Props) {
   }, [id]);
 
   useEffect(() => {
+    if (!authChecked) {
+      return;
+    }
+
+    if (currentUser?.role !== "ADMIN") {
+      setLoading(false);
+      setContentType(null);
+      setError(null);
+      return;
+    }
+
     void load();
-  }, [load]);
+  }, [authChecked, currentUser?.role, load]);
 
   const handleAddField = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -182,6 +209,15 @@ export function ContentTypeDetailClient({ id }: Props) {
     }
   };
 
+  if (!authChecked) return <LoadingBlock title="Yetki kontrolü yapılıyor..." />;
+  if (authChecked && currentUser?.role !== "ADMIN") {
+    return (
+      <ErrorBlock
+        title="Yetkisiz işlem"
+        description="Content type builder sadece admin rolü için erişilebilir."
+      />
+    );
+  }
   if (loading) return <LoadingBlock title="İçerik tipi detayı yükleniyor..." />;
   if (error) return <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} />;
   if (!contentType) return <EmptyBlock title="İçerik tipi bulunamadı" description="İstenen şema mevcut değil veya erişim izniniz yok." />;

@@ -11,6 +11,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 
 @ApiTags('Kimlik Dogrulama')
@@ -25,6 +26,25 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 1000 * 60 * 60 * 24,
+    };
+  }
+
+  @Public()
+  @Post('register')
+  @ApiOperation({
+    summary: 'Kullanici kaydi',
+    description:
+      'Yeni bir EDITOR kullanicisi olusturur, HttpOnly oturum cerezini yazar.',
+  })
+  @ApiOkResponse({ description: 'Kayit ve oturum acma basarili.' })
+  async register(@Body() body: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(body);
+
+    res.cookie('admin_token', result.token, this.getCookieOptions());
+
+    return {
+      ok: true,
+      user: result.user,
     };
   }
 

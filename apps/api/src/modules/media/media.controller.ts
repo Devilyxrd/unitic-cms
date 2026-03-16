@@ -13,6 +13,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -69,11 +70,13 @@ export class MediaController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({
     summary: 'Medyayi sil',
     description: 'Belirtilen medya kaydini ve dosyasini siler.',
   })
   @ApiOkResponse({ description: 'Medya silindi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
   remove(@Param('id') id: string) {
     return this.mediaService.remove(id);
   }

@@ -61,11 +61,13 @@ export function DashboardPageClient() {
     setError(null);
 
     try {
-      const [users, contentTypes, media, me] = await Promise.all([
-        listUsers(null),
+      const me = await apiClient<User>("/auth/me", { method: "GET" }).catch(() => null);
+      const isAdmin = me?.role === "ADMIN";
+
+      const [users, contentTypes, media] = await Promise.all([
+        isAdmin ? listUsers(null) : Promise.resolve([]),
         listContentTypes(null),
         listMedia(null),
-        apiClient<User>("/auth/me", { method: "GET" }).catch(() => null),
       ]);
 
       const entryCollections = await Promise.all(
@@ -184,10 +186,12 @@ export function DashboardPageClient() {
       {!loading && stats ? (
         <>
           <div className="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <article className="rounded-xl border border-(--line) bg-(--surface-muted) p-4">
-              <p className="text-xs uppercase tracking-[0.08em] text-slate-400">Kullanıcı</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-100">{stats.userCount}</p>
-            </article>
+            {currentUser?.role === "ADMIN" ? (
+              <article className="rounded-xl border border-(--line) bg-(--surface-muted) p-4">
+                <p className="text-xs uppercase tracking-[0.08em] text-slate-400">Kullanıcı</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-100">{stats.userCount}</p>
+              </article>
+            ) : null}
 
             <article className="rounded-xl border border-(--line) bg-(--surface-muted) p-4">
               <p className="text-xs uppercase tracking-[0.08em] text-slate-400">İçerik Tipi</p>
@@ -210,7 +214,10 @@ export function DashboardPageClient() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             {QUICK_ACTIONS.filter((action) => {
-              if (currentUser?.role === "EDITOR" && action.href === ROUTES.users) {
+              if (
+                currentUser?.role === "EDITOR" &&
+                (action.href === ROUTES.users || action.href === ROUTES.contentTypes)
+              ) {
                 return false;
               }
 

@@ -1,16 +1,18 @@
 // @ts-nocheck
-import { UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { AuthService } from './auth.service';
 
 jest.mock('bcryptjs', () => ({
   compare: jest.fn(),
+  hash: jest.fn(),
 }));
 
 describe('AuthService', () => {
   const prismaMock = {
     user: {
+      create: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
     },
@@ -50,6 +52,57 @@ describe('AuthService', () => {
         role: Role.ADMIN,
       },
     });
+  });
+
+  it('registers editor user and returns session payload', async () => {
+    hash.mockResolvedValue('hashed-password');
+    prismaMock.user.create.mockResolvedValue({
+      id: 'user-2',
+      email: 'editor@unitic.dev',
+      username: 'editor',
+      role: Role.EDITOR,
+    });
+    jwtServiceMock.signAsync.mockResolvedValue('jwt-token');
+
+    const result = await authService.register({
+      email: 'editor@unitic.dev',
+      username: 'editor',
+      password: 'Editor123!',
+    });
+
+    expect(prismaMock.user.create).toHaveBeenCalledWith({
+      data: {
+        email: 'editor@unitic.dev',
+        username: 'editor',
+        password: 'hashed-password',
+        role: Role.EDITOR,
+      },
+    });
+    expect(result).toEqual({
+      token: 'jwt-token',
+      user: {
+        id: 'user-2',
+        email: 'editor@unitic.dev',
+        username: 'editor',
+        role: Role.EDITOR,
+      },
+    });
+  });
+
+  it('throws conflict for duplicate registration data', async () => {
+    hash.mockResolvedValue('hashed-password');
+    prismaMock.user.create.mockRejectedValue({
+      code: 'P2002',
+      constructor: { name: 'PrismaClientKnownRequestError' },
+    });
+
+    await expect(
+      authService.register({
+        email: 'editor@unitic.dev',
+        username: 'editor',
+        password: 'Editor123!',
+      }),
+    ).rejects.toThrow(new ConflictException('E-posta veya kullanıcı adı zaten kullanımda.'));
   });
 
   it('throws unauthorized for inactive user', async () => {

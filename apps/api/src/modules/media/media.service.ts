@@ -18,6 +18,7 @@ type UploadFile = {
 
 @Injectable()
 export class MediaService {
+  private readonly maxFileSize = 10 * 1024 * 1024;
   private readonly uploadDir = join(process.cwd(), 'uploads');
 
   constructor(private readonly prisma: PrismaService) {}
@@ -34,13 +35,30 @@ export class MediaService {
       throw new BadRequestException('Yüklenecek dosya bulunamadı.');
     }
 
+    const originalName = file.originalname?.trim();
+    if (!originalName) {
+      throw new BadRequestException('Dosya adı boş olamaz.');
+    }
+
+    if (!Number.isFinite(file.size) || file.size <= 0) {
+      throw new BadRequestException('Dosya boyutu geçersiz.');
+    }
+
+    if (file.size > this.maxFileSize) {
+      throw new BadRequestException('Dosya boyutu 10 MB sınırını aşamaz.');
+    }
+
     if (!file.mimetype || !file.mimetype.includes('/')) {
       throw new BadRequestException('Dosya türü geçersiz.');
     }
 
+    const extension = this.resolveExtension(originalName);
+    if (extension && !/^\.[a-zA-Z0-9]+$/.test(extension)) {
+      throw new BadRequestException('Dosya uzantısı geçersiz.');
+    }
+
     await mkdir(this.uploadDir, { recursive: true });
 
-    const extension = this.resolveExtension(file.originalname);
     const filename = `${randomUUID()}${extension}`;
     const absolutePath = join(this.uploadDir, filename);
 
@@ -54,7 +72,7 @@ export class MediaService {
 
     return this.prisma.media.create({
       data: {
-        filename: file.originalname,
+        filename: originalName,
         mimeType: file.mimetype,
         size: file.size,
         url: `/uploads/${filename}`,

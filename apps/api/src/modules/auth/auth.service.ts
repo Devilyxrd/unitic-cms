@@ -1,8 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { compare } from 'bcryptjs';
+import { Prisma, Role } from '@prisma/client';
+import { compare, hash } from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/types/auth-user';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -10,6 +16,41 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
+
+  async register(payload: RegisterDto) {
+    const passwordHash = await hash(payload.password, 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email: payload.email,
+          username: payload.username,
+          password: passwordHash,
+          role: Role.EDITOR,
+        },
+      });
+
+      return this.issueSession(user.id, user.email, user.username, user.role);
+    } catch (error) {
+      if (this.isPrismaKnownError(error, 'P2002')) {
+        throw new ConflictException(
+          'E-posta veya kullanıcı adı zaten kullanımda.',
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  private isPrismaKnownError(error: unknown, code: string) {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError ||
+      (typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === code)
+    );
+  }
 
   async login(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -26,30 +67,12 @@ export class AuthService {
       throw new UnauthorizedException('E-posta veya şifre hatalı.');
     }
 
-    const payload: AuthUser = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    const token = await this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET ?? 'dev-secret',
-    });
-
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
 
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-      },
-    };
+    return this.issueSession(user.id, user.email, user.username, user.role);
   }
 
   async me(userId: string) {
@@ -70,5 +93,32 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  private async issueSession(
+    id: string,
+    email: string,
+    username: string,
+    role: Role,
+  ) {
+    const payload: AuthUser = {
+      id,
+      email,
+      role,
+    };
+
+    const token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET ?? 'dev-secret',
+    });
+
+    return {
+      token,
+      user: {
+        id,
+        email,
+        username,
+        role,
+      },
+    };
   }
 }
