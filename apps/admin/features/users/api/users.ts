@@ -8,6 +8,13 @@ export type CreateUserPayload = {
   role: Role;
 };
 
+export type UpdateUserPayload = {
+  email?: string;
+  username?: string;
+  password?: string;
+  role?: Role;
+};
+
 function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | undefined): T[] {
   if (Array.isArray(response)) {
     return response;
@@ -33,5 +40,28 @@ export async function createUser(payload: CreateUserPayload, token: string | nul
     token: token ?? undefined,
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function setUserActive(userId: string, active: boolean, token: string | null) {
+  return apiClient<User>(`/users/${userId}/active`, {
+    token: token ?? undefined,
+    method: "PATCH",
+    body: JSON.stringify({ active }),
+  });
+}
+
+export async function updateUser(userId: string, payload: UpdateUserPayload, token: string | null) {
+  return apiClient<User>(`/users/${userId}`, {
+    token: token ?? undefined,
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteUser(userId: string, token: string | null) {
+  return apiClient<{ success: boolean }>(`/users/${userId}`, {
+    token: token ?? undefined,
+    method: "DELETE",
   });
 }

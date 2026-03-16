@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -19,6 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
 import { CreateEntryDto } from './dto/create-entry.dto';
+import { UpdateEntryDto } from './dto/update-entry.dto';
 import { UpdateEntryStatusDto } from './dto/update-entry-status.dto';
 import { EntriesService } from './entries.service';
 
@@ -82,6 +84,16 @@ export class EntriesController {
     return this.entriesService.create(contentTypeSlug, body, user);
   }
 
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Kaydi guncelle',
+    description: 'Slug, durum ve alan degerlerini gunceller.',
+  })
+  @ApiOkResponse({ description: 'Kayit guncellendi.' })
+  update(@Param('id') id: string, @Body() body: UpdateEntryDto) {
+    return this.entriesService.update(id, body);
+  }
+
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Kayit durumunu guncelle',
@@ -90,5 +102,15 @@ export class EntriesController {
   @ApiOkResponse({ description: 'Kayit durumu guncellendi.' })
   updateStatus(@Param('id') id: string, @Body() body: UpdateEntryStatusDto) {
     return this.entriesService.updateStatus(id, body.status);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Kaydi sil',
+    description: 'Belirli bir kaydi kalici olarak siler.',
+  })
+  @ApiOkResponse({ description: 'Kayit silindi.' })
+  remove(@Param('id') id: string) {
+    return this.entriesService.remove(id);
   }
 }

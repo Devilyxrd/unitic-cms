@@ -1,6 +1,8 @@
 import {
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -64,5 +66,15 @@ export class MediaController {
   )
   upload(@UploadedFile() file: Express.Multer.File) {
     return this.mediaService.upload(file);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Medyayi sil',
+    description: 'Belirtilen medya kaydini ve dosyasini siler.',
+  })
+  @ApiOkResponse({ description: 'Medya silindi.' })
+  remove(@Param('id') id: string) {
+    return this.mediaService.remove(id);
   }
 }

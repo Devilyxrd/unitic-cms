@@ -8,6 +8,7 @@ import { EntryStatus, FieldType, Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
+import { UpdateEntryDto } from './dto/update-entry.dto';
 
 @Injectable()
 export class EntriesService {
@@ -111,6 +112,95 @@ export class EntriesService {
           values: true,
         },
       });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Kayıt bulunamadı.');
+      }
+      throw error;
+    }
+  }
+
+  async update(id: string, payload: UpdateEntryDto) {
+    const entry = await this.prisma.entry.findUnique({
+      where: { id },
+      include: {
+        contentType: {
+          include: {
+            fields: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Kayıt bulunamadı.');
+    }
+
+    if (payload.values) {
+      this.validateEntryValues(entry.contentType.fields, payload.values);
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const updatedEntry = await tx.entry.update({
+          where: { id },
+          data: {
+            ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
+            ...(payload.status !== undefined
+              ? {
+                  status: payload.status,
+                  publishedAt:
+                    payload.status === EntryStatus.PUBLISHED ? new Date() : null,
+                }
+              : {}),
+          },
+        });
+
+        if (payload.values) {
+          await tx.entryValue.deleteMany({
+            where: { entryId: id },
+          });
+
+          if (payload.values.length > 0) {
+            await tx.entryValue.createMany({
+              data: payload.values.map((value) => ({
+                entryId: id,
+                fieldId: value.fieldId,
+                value: value.value as Prisma.InputJsonValue,
+                mediaId: value.mediaId ?? null,
+              })),
+            });
+          }
+        }
+
+        return tx.entry.findUnique({
+          where: { id: updatedEntry.id },
+          include: { values: true },
+        });
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Bu slug ile bir kayıt zaten mevcut.');
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      await this.prisma.entry.delete({
+        where: { id },
+      });
+
+      return { success: true };
     } catch (error: unknown) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

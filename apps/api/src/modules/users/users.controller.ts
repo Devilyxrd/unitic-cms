@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import {
   ApiBearerAuth,
@@ -10,6 +18,7 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SetUserActiveDto } from './dto/set-user-active.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('Kullanicilar')
@@ -50,5 +59,27 @@ export class UsersController {
   @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
   setActive(@Param('id') id: string, @Body() body: SetUserActiveDto) {
     return this.usersService.setActive(id, body.active);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Kullanici bilgilerini guncelle',
+    description: 'E-posta, kullanici adi, sifre veya rol bilgisini gunceller.',
+  })
+  @ApiOkResponse({ description: 'Kullanici guncellendi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  update(@Param('id') id: string, @Body() body: UpdateUserDto) {
+    return this.usersService.update(id, body);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Kullaniciyi sil',
+    description: 'Belirtilen kullaniciyi kalici olarak siler.',
+  })
+  @ApiOkResponse({ description: 'Kullanici silindi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
   }
 }

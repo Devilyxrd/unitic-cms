@@ -39,3 +39,10 @@ export async function uploadMedia(file: File, token: string | null) {
 
   return (await response.json()) as MediaItem;
 }
+
+export async function deleteMedia(id: string, token: string | null) {
+  return apiClient<{ success: boolean }>(`/media/${id}`, {
+    token: token ?? undefined,
+    method: "DELETE",
+  });
+}
