@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ROUTES } from "@/constants/routes";
@@ -70,6 +71,13 @@ export function LoginForm() {
       >
         {loading ? "Giriş yapılıyor..." : "Giriş yap"}
       </button>
+
+      <p className="text-center text-sm text-slate-400">
+        Henüz hesabın yok mu?{" "}
+        <Link href={ROUTES.register} className="text-(--brand) hover:underline">
+          Kayıt ol
+        </Link>
+      </p>
     </form>
   );
 }
