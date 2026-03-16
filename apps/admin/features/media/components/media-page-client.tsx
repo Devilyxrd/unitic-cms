@@ -30,6 +30,7 @@ export function MediaPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const loadCurrentUser = async () => {
@@ -38,6 +39,8 @@ export function MediaPageClient() {
         setCurrentUser(me);
       } catch {
         setCurrentUser(null);
+      } finally {
+        setAuthChecked(true);
       }
     };
 
@@ -58,8 +61,19 @@ export function MediaPageClient() {
   };
 
   useEffect(() => {
+    if (!authChecked) {
+      return;
+    }
+
+    if (currentUser?.role !== "ADMIN") {
+      setLoading(false);
+      setItems([]);
+      setError(null);
+      return;
+    }
+
     void load();
-  }, []);
+  }, [authChecked, currentUser?.role]);
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -121,49 +135,60 @@ export function MediaPageClient() {
       <h1 className="page-title">Medya Kütüphanesi</h1>
       <p className="page-subtitle">Dosya yükleyin ve içerik kayıtlarında tekrar kullanın.</p>
 
-      <div className="mt-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4">
-        <label className="text-sm font-medium text-slate-100">Dosya yükle</label>
-        <input
-          type="file"
-          className="ui-control mt-2 block w-full rounded-lg border border-(--line) bg-(--surface) p-2 text-sm text-slate-300"
-          onChange={(event) => void handleUpload(event)}
-          disabled={uploading}
+      {!authChecked ? <LoadingBlock title="Yetki kontrolü yapılıyor..." /> : null}
+
+      {authChecked && currentUser?.role !== "ADMIN" ? (
+        <ErrorBlock
+          title="Yetkisiz işlem"
+          description="Medya kütüphanesi sadece admin rolü için erişilebilir."
         />
-        <p className="mt-2 text-xs text-slate-400">{uploading ? "Yükleniyor..." : "Desteklenmeyen dosyalarda API hata döndürebilir."}</p>
-      </div>
-
-      {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} /> : null}
-      {loading ? <LoadingBlock title="Medya kütüphanesi yükleniyor..." /> : null}
-
-      {!loading && !error && items.length === 0 ? (
-        <EmptyBlock title="Henüz medya yok" description="İlk dosyanı yükledikten sonra burada listelenecek." />
       ) : null}
 
-      {!loading && items.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((item) => (
-            <article key={item.id} className="ui-elevate rounded-xl border border-(--line) bg-(--surface-muted) p-4">
-              <p className="truncate text-sm font-semibold text-slate-100">{item.filename}</p>
-              <p className="mt-1 text-xs text-slate-300">{item.mimeType}</p>
-              <p className="mt-1 text-xs text-slate-400">{Math.round(item.size / 1024)} KB</p>
-              <a href={resolveMediaUrl(item.url)} target="_blank" rel="noreferrer" className="ui-control mt-3 inline-flex rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
-                Dosyayı aç
-              </a>
-              {currentUser?.role === "ADMIN" ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(item)}
-                    disabled={deletingId === item.id}
-                    className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
-                  >
-                    {deletingId === item.id ? "Siliniyor..." : "Sil"}
-                  </button>
-                </div>
-              ) : null}
-            </article>
-          ))}
-        </div>
+      {authChecked && currentUser?.role === "ADMIN" ? (
+        <>
+          <div className="mt-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4">
+            <label className="text-sm font-medium text-slate-100">Dosya yükle</label>
+            <input
+              type="file"
+              className="ui-control mt-2 block w-full rounded-lg border border-(--line) bg-(--surface) p-2 text-sm text-slate-300"
+              onChange={(event) => void handleUpload(event)}
+              disabled={uploading}
+            />
+            <p className="mt-2 text-xs text-slate-400">{uploading ? "Yükleniyor..." : "Desteklenmeyen dosyalarda API hata döndürebilir."}</p>
+          </div>
+
+          {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} /> : null}
+          {loading ? <LoadingBlock title="Medya kütüphanesi yükleniyor..." /> : null}
+
+          {!loading && !error && items.length === 0 ? (
+            <EmptyBlock title="Henüz medya yok" description="İlk dosyanı yükledikten sonra burada listelenecek." />
+          ) : null}
+
+          {!loading && items.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((item) => (
+                <article key={item.id} className="ui-elevate rounded-xl border border-(--line) bg-(--surface-muted) p-4">
+                  <p className="truncate text-sm font-semibold text-slate-100">{item.filename}</p>
+                  <p className="mt-1 text-xs text-slate-300">{item.mimeType}</p>
+                  <p className="mt-1 text-xs text-slate-400">{Math.round(item.size / 1024)} KB</p>
+                  <a href={resolveMediaUrl(item.url)} target="_blank" rel="noreferrer" className="ui-control mt-3 inline-flex rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
+                    Dosyayı aç
+                  </a>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(item)}
+                      disabled={deletingId === item.id}
+                      className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
+                    >
+                      {deletingId === item.id ? "Siliniyor..." : "Sil"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   );
