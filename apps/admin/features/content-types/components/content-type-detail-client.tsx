@@ -1,12 +1,15 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
-import { getContentTypeById } from "@/features/content-types/api/content-types";
+import { addContentField, deleteContentField, getContentTypeById, updateContentField } from "@/features/content-types/api/content-types";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
+import { ToastStack } from "@/shared/components/toast-stack";
 import { getAuthToken } from "@/shared/lib/auth-token";
-import { apiClient } from "@/shared/lib/api-client";
-import type { ContentType, FieldType } from "@/types";
+import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
+import { useToast } from "@/shared/hooks/use-toast";
+import type { ContentField, ContentType, FieldType } from "@/types";
 
 const FIELD_TYPES: FieldType[] = ["TEXT", "RICHTEXT", "NUMBER", "BOOLEAN", "DATE", "MEDIA"];
 
@@ -34,6 +37,8 @@ type Props = {
 };
 
 export function ContentTypeDetailClient({ id }: Props) {
+  const { toasts, dismissToast, showError, showSuccess } = useToast();
+
   const [contentType, setContentType] = useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +48,8 @@ export function ContentTypeDetailClient({ id }: Props) {
   const [fieldType, setFieldType] = useState<FieldType>("TEXT");
   const [required, setRequired] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [updatingFieldId, setUpdatingFieldId] = useState<string | null>(null);
+  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,25 +74,111 @@ export function ContentTypeDetailClient({ id }: Props) {
     setError(null);
 
     try {
-      await apiClient(`/content-types/${id}/fields`, {
-        token: getAuthToken() ?? undefined,
-        method: "POST",
-        body: JSON.stringify({
+      await addContentField(
+        id,
+        {
           name: fieldName,
           slug: fieldSlug,
           type: fieldType,
           required,
-        }),
-      });
+        },
+        getAuthToken(),
+      );
       setFieldName("");
       setFieldSlug("");
       setFieldType("TEXT");
       setRequired(false);
+      showSuccess("Alan eklendi", "İçerik tipi alanları güncellendi.");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Alan eklenemedi.");
+      const message = err instanceof Error ? err.message : "Alan eklenemedi.";
+      setError(message);
+      showError("Alan eklenemedi", message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEditField = async (field: ContentField) => {
+    const result = await Swal.fire({
+      title: "Alani duzenle",
+      html: `
+        <input id="swal-field-name" class="swal2-input" placeholder="Alan adi" value="${field.name}" />
+        <input id="swal-field-slug" class="swal2-input" placeholder="Alan slug" value="${field.slug}" />
+        <select id="swal-field-type" class="swal2-input">
+          ${FIELD_TYPES.map((type) => `<option value="${type}" ${type === field.type ? "selected" : ""}>${fieldTypeLabel(type)}</option>`).join("")}
+        </select>
+        <label style="display:flex;align-items:center;gap:8px;justify-content:center;color:#cbd5e1;margin-top:8px;">
+          <input id="swal-field-required" type="checkbox" ${field.required ? "checked" : ""} />
+          Zorunlu alan
+        </label>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Kaydet",
+      cancelButtonText: "Iptal",
+      background: "#0f1420",
+      color: "#e2e8f0",
+      preConfirm: () => {
+        const nameValue = (document.getElementById("swal-field-name") as HTMLInputElement | null)?.value?.trim();
+        const slugValue = (document.getElementById("swal-field-slug") as HTMLInputElement | null)?.value?.trim();
+        const typeValue = (document.getElementById("swal-field-type") as HTMLSelectElement | null)?.value as FieldType | undefined;
+        const requiredValue = (document.getElementById("swal-field-required") as HTMLInputElement | null)?.checked ?? false;
+
+        if (!nameValue || !slugValue || !typeValue) {
+          Swal.showValidationMessage("Ad, slug ve tip zorunlu.");
+          return null;
+        }
+
+        return {
+          name: nameValue,
+          slug: slugValue,
+          type: typeValue,
+          required: requiredValue,
+        };
+      },
+    });
+
+    if (!result.isConfirmed || !result.value) {
+      return;
+    }
+
+    setUpdatingFieldId(field.id);
+    try {
+      await updateContentField(id, field.id, result.value, getAuthToken());
+      showSuccess("Alan guncellendi", `${field.name} kaydedildi.`);
+      await load();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Alan guncellenemedi.";
+      setError(message);
+      showError("Alan guncellenemedi", message);
+    } finally {
+      setUpdatingFieldId(null);
+    }
+  };
+
+  const handleDeleteField = async (field: ContentField) => {
+    const shouldDelete = await confirmDestructiveAction({
+      title: "Alan silinsin mi?",
+      text: `${field.name} alani ve bu alana bagli veriler silinecek.`,
+      confirmText: "Sil",
+      cancelText: "Iptal",
+    });
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingFieldId(field.id);
+    try {
+      await deleteContentField(id, field.id, getAuthToken());
+      showSuccess("Alan silindi", `${field.name} listeden kaldirildi.`);
+      await load();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Alan silinemedi.";
+      setError(message);
+      showError("Alan silinemedi", message);
+    } finally {
+      setDeletingFieldId(null);
     }
   };
 
@@ -95,9 +188,11 @@ export function ContentTypeDetailClient({ id }: Props) {
 
   return (
     <section className="page-card ui-elevate">
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
       <p className="page-kicker">Şema Detayı</p>
       <h1 className="page-title">{contentType.name}</h1>
-      <p className="page-subtitle">{contentType.description || "Açıklama girilmemiş."}</p>
+      <p className="page-subtitle">{contentType.description || "Bu içerik tipi için açıklama eklenmemiş."}</p>
 
       <form onSubmit={handleAddField} className="mt-3 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-4">
         <input
@@ -136,7 +231,7 @@ export function ContentTypeDetailClient({ id }: Props) {
       </form>
 
       {contentType.fields.length === 0 ? (
-        <EmptyBlock title="Henüz alan yok" description="Bu içerik tipinde dinamik kayıt render etmek için alan ekleyin." />
+        <EmptyBlock title="Henüz alan yok" description="Kayıt eklemek için önce bu içerik tipine alan ekleyin." />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-(--line)">
           <table className="min-w-full text-left text-sm">
@@ -147,6 +242,7 @@ export function ContentTypeDetailClient({ id }: Props) {
                 <th className="px-4 py-3">Slug</th>
                 <th className="px-4 py-3">Tür</th>
                 <th className="px-4 py-3">Zorunlu</th>
+                <th className="px-4 py-3">Islemler</th>
               </tr>
             </thead>
             <tbody>
@@ -159,6 +255,26 @@ export function ContentTypeDetailClient({ id }: Props) {
                     <td className="px-4 py-3 text-slate-300">{field.slug}</td>
                     <td className="px-4 py-3 text-slate-300">{fieldTypeLabel(field.type)}</td>
                     <td className="px-4 py-3 text-slate-300">{field.required ? "Evet" : "Hayır"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleEditField(field)}
+                          disabled={updatingFieldId === field.id}
+                          className="ui-control rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200 disabled:opacity-60"
+                        >
+                          {updatingFieldId === field.id ? "Guncelleniyor..." : "Duzenle"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteField(field)}
+                          disabled={deletingFieldId === field.id}
+                          className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
+                        >
+                          {deletingFieldId === field.id ? "Siliniyor..." : "Sil"}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>

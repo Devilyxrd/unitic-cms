@@ -2,9 +2,10 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -59,6 +60,27 @@ export class MediaService {
         url: `/uploads/${filename}`,
       },
     });
+  }
+
+  async remove(id: string) {
+    const media = await this.prisma.media.findUnique({ where: { id } });
+
+    if (!media) {
+      throw new NotFoundException('Medya bulunamadı.');
+    }
+
+    await this.prisma.entryValue.updateMany({
+      where: { mediaId: id },
+      data: { mediaId: null },
+    });
+
+    await this.prisma.media.delete({ where: { id } });
+
+    const fileName = media.url.replace('/uploads/', '');
+    const absolutePath = join(this.uploadDir, fileName);
+    await unlink(absolutePath).catch(() => undefined);
+
+    return { success: true };
   }
 
   private resolveExtension(name: string) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 
 import { AdminShell } from "@/shared/components/admin-shell";
 import "./globals.css";
@@ -23,6 +24,23 @@ export default function RootLayout({
     <html lang="tr">
       <body className={`${spaceGrotesk.variable} antialiased`}>
         <AdminShell>{children}</AdminShell>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3500,
+            style: {
+              background: "#0f1420",
+              color: "#e2e8f0",
+              border: "1px solid #1f293a",
+            },
+            success: {
+              duration: 3000,
+            },
+            error: {
+              duration: 4500,
+            },
+          }}
+        />
       </body>
     </html>
   );

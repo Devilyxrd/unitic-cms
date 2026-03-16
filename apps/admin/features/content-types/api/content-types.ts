@@ -1,10 +1,23 @@
 import { apiClient } from "@/shared/lib/api-client";
-import type { ApiListResponse, ContentType } from "@/types";
+import type { ApiListResponse, ContentType, FieldType } from "@/types";
 
 export type CreateContentTypePayload = {
   name: string;
   slug: string;
   description?: string;
+};
+
+export type UpdateContentTypePayload = {
+  name?: string;
+  slug?: string;
+  description?: string;
+};
+
+export type UpdateContentFieldPayload = {
+  name?: string;
+  slug?: string;
+  type?: FieldType;
+  required?: boolean;
 };
 
 function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | undefined): T[] {
@@ -36,5 +49,52 @@ export async function createContentType(payload: CreateContentTypePayload, token
     token: token ?? undefined,
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updateContentType(id: string, payload: UpdateContentTypePayload, token: string | null) {
+  return apiClient<ContentType>(`/content-types/${id}`, {
+    token: token ?? undefined,
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteContentType(id: string, token: string | null) {
+  return apiClient<{ success: boolean }>(`/content-types/${id}`, {
+    token: token ?? undefined,
+    method: "DELETE",
+  });
+}
+
+export async function addContentField(
+  contentTypeId: string,
+  payload: { name: string; slug: string; type: FieldType; required?: boolean },
+  token: string | null,
+) {
+  return apiClient<ContentType>(`/content-types/${contentTypeId}/fields`, {
+    token: token ?? undefined,
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateContentField(
+  contentTypeId: string,
+  fieldId: string,
+  payload: UpdateContentFieldPayload,
+  token: string | null,
+) {
+  return apiClient<ContentType>(`/content-types/${contentTypeId}/fields/${fieldId}`, {
+    token: token ?? undefined,
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteContentField(contentTypeId: string, fieldId: string, token: string | null) {
+  return apiClient<ContentType>(`/content-types/${contentTypeId}/fields/${fieldId}`, {
+    token: token ?? undefined,
+    method: "DELETE",
   });
 }

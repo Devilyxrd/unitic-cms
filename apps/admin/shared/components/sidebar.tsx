@@ -1,8 +1,14 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  ApiClientError,
+  apiClient,
+} from "@/shared/lib/api-client";
+import type { Role, User } from "@/types";
 import {
   type LucideIcon,
   Image as ImageIcon,
@@ -34,6 +40,50 @@ const NAV_ICON_BY_HREF: Record<string, LucideIcon> = {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMe = async () => {
+      try {
+        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        if (!cancelled) {
+          setCurrentUser(me);
+        }
+      } catch (error) {
+        if (error instanceof ApiClientError && error.status === 401) {
+          router.push(ROUTES.login);
+        }
+      }
+    };
+
+    void loadMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  const visibleNavItems = useMemo(() => {
+    if (currentUser?.role === "EDITOR") {
+      return NAV_ITEMS.filter((item) => item.href !== ROUTES.users);
+    }
+
+    return NAV_ITEMS;
+  }, [currentUser?.role]);
+
+  const roleText = (role: Role | undefined) => {
+    if (role === "ADMIN") {
+      return "Admin";
+    }
+
+    if (role === "EDITOR") {
+      return "Editor";
+    }
+
+    return "Role";
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -77,13 +127,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-100">Devilyxrd</p>
-              <p className="truncate text-xs text-slate-300">Software Developer</p>
+              <p className="truncate text-sm font-semibold text-slate-100">{currentUser?.username ?? "Username"}</p>
+              <p className="truncate text-xs text-slate-300">{roleText(currentUser?.role)}</p>
             </div>
           </div>
 
           <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Yönetim Paneli</p>
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = NAV_ICON_BY_HREF[item.href] ?? LayoutDashboard;
 

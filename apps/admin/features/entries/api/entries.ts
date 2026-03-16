@@ -7,6 +7,12 @@ export type CreateEntryPayload = {
   values: Array<{ fieldId: string; value?: unknown; mediaId?: string | null }>;
 };
 
+export type UpdateEntryPayload = {
+  slug?: string;
+  status?: EntryStatus;
+  values?: Array<{ fieldId: string; value?: unknown; mediaId?: string | null }>;
+};
+
 function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | undefined): T[] {
   if (Array.isArray(response)) {
     return response;
@@ -45,5 +51,20 @@ export async function updateEntryStatus(entryId: string, status: EntryStatus, to
     token: token ?? undefined,
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function deleteEntry(entryId: string, token: string | null) {
+  return apiClient<{ success: boolean }>(`/entries/${entryId}`, {
+    token: token ?? undefined,
+    method: "DELETE",
+  });
+}
+
+export async function updateEntry(entryId: string, payload: UpdateEntryPayload, token: string | null) {
+  return apiClient<Entry>(`/entries/${entryId}`, {
+    token: token ?? undefined,
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }

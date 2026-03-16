@@ -7,6 +7,7 @@ import { Prisma, Role } from '@prisma/client';
 import { hash } from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -75,6 +76,65 @@ export class UsersService {
           createdAt: true,
         },
       });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Kullanıcı bulunamadı.');
+      }
+      throw error;
+    }
+  }
+
+  async update(id: string, payload: UpdateUserDto) {
+    const data: Prisma.UserUpdateInput = {
+      ...(payload.email ? { email: payload.email } : {}),
+      ...(payload.username ? { username: payload.username } : {}),
+      ...(payload.role ? { role: payload.role } : {}),
+    };
+
+    if (payload.password) {
+      data.password = await hash(payload.password, 10);
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'E-posta veya kullanıcı adı zaten kullanımda.',
+        );
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Kullanıcı bulunamadı.');
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      await this.prisma.user.delete({ where: { id } });
+      return { success: true };
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
