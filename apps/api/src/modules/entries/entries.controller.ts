@@ -6,14 +6,13 @@ import {
   Param,
   Patch,
   Post,
-  Query,
 } from '@nestjs/common';
 import { EntryStatus, Role } from '@prisma/client';
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -24,61 +23,76 @@ import { UpdateEntryDto } from './dto/update-entry.dto';
 import { UpdateEntryStatusDto } from './dto/update-entry-status.dto';
 import { EntriesService } from './entries.service';
 
-@ApiTags('Kayitlar')
+@ApiTags('Kayıtlar')
 @ApiBearerAuth('bearer')
 @Controller('entries')
 @Roles(Role.ADMIN, Role.EDITOR)
 export class EntriesController {
   constructor(private readonly entriesService: EntriesService) {}
 
-  @Get()
+  @Get('content-type/:contentType')
   @ApiOperation({
-    summary: 'Kayitlari listele',
-    description: 'Icerik tipi ve durum filtreleriyle kayit listesi getirir.',
+    summary: 'Kayıtları listele',
+    description: 'İçerik tipi bazlı kayıt listesi getirir.',
   })
-  @ApiQuery({
+  @ApiParam({
     name: 'contentType',
-    required: false,
-    description: 'Icerik tipi slug degeri (ornek: blog-yazisi).',
+    required: true,
+    description: 'İçerik tipi slug değeri (örnek: blog-yazisi).',
   })
-  @ApiQuery({
+  @ApiOkResponse({ description: 'Kayıt listesi döndürüldü.' })
+  list(@Param('contentType') contentTypeSlug: string) {
+    return this.entriesService.list(contentTypeSlug, undefined);
+  }
+
+  @Get('content-type/:contentType/status/:status')
+  @ApiOperation({
+    summary: 'Kayıtları duruma göre listele',
+    description:
+      'Belirli içerik tipinde, belirtilen durumdaki kayıtları listeler.',
+  })
+  @ApiParam({
+    name: 'contentType',
+    required: true,
+    description: 'İçerik tipi slug değeri (örnek: blog-yazisi).',
+  })
+  @ApiParam({
     name: 'status',
-    required: false,
+    required: true,
     enum: EntryStatus,
-    description: 'Kayit durumu filtresi.',
+    description: 'Kayıt durumu filtresi.',
   })
-  @ApiOkResponse({ description: 'Kayit listesi donduruldu.' })
-  list(
-    @Query('contentType') contentTypeSlug?: string,
-    @Query('status') status?: EntryStatus,
-    @CurrentUser() user?: AuthUser,
+  @ApiOkResponse({ description: 'Kayıt listesi döndürüldü.' })
+  listByStatus(
+    @Param('contentType') contentTypeSlug: string,
+    @Param('status') status: EntryStatus,
   ) {
-    return this.entriesService.list(contentTypeSlug, status, user);
+    return this.entriesService.list(contentTypeSlug, status);
   }
 
   @Get(':id')
   @ApiOperation({
-    summary: 'Kayit detayi',
-    description: 'Belirli bir kaydi degerleriyle getirir.',
+    summary: 'Kayıt detayı',
+    description: 'Belirli bir kaydı değerleriyle getirir.',
   })
-  @ApiOkResponse({ description: 'Kayit detayi donduruldu.' })
+  @ApiOkResponse({ description: 'Kayıt detayı döndürüldü.' })
   getById(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
     return this.entriesService.getById(id, user);
   }
 
-  @Post()
+  @Post('content-type/:contentType')
   @ApiOperation({
-    summary: 'Kayit olustur',
-    description: 'Belirli bir icerik tipinde yeni kayit olusturur.',
+    summary: 'Kayıt oluştur',
+    description: 'Belirli bir içerik tipinde yeni kayıt oluşturur.',
   })
-  @ApiQuery({
+  @ApiParam({
     name: 'contentType',
     required: true,
-    description: 'Kaydin olusturulacagi icerik tipi slug degeri.',
+    description: 'Kaydın oluşturulacağı içerik tipi slug değeri.',
   })
-  @ApiOkResponse({ description: 'Kayit olusturuldu.' })
+  @ApiOkResponse({ description: 'Kayıt oluşturuldu.' })
   create(
-    @Query('contentType') contentTypeSlug: string,
+    @Param('contentType') contentTypeSlug: string,
     @Body() body: CreateEntryDto,
     @CurrentUser() user: AuthUser,
   ) {
@@ -87,10 +101,10 @@ export class EntriesController {
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Kaydi guncelle',
-    description: 'Slug, durum ve alan degerlerini gunceller.',
+    summary: 'Kaydı güncelle',
+    description: 'Slug, durum ve alan değerlerini günceller.',
   })
-  @ApiOkResponse({ description: 'Kayit guncellendi.' })
+  @ApiOkResponse({ description: 'Kayıt güncellendi.' })
   update(
     @Param('id') id: string,
     @Body() body: UpdateEntryDto,
@@ -101,10 +115,10 @@ export class EntriesController {
 
   @Patch(':id/status')
   @ApiOperation({
-    summary: 'Kayit durumunu guncelle',
-    description: 'Kaydi DRAFT veya PUBLISHED durumuna gecirir.',
+    summary: 'Kayıt durumunu güncelle',
+    description: 'Kaydı DRAFT veya PUBLISHED durumuna geçirir.',
   })
-  @ApiOkResponse({ description: 'Kayit durumu guncellendi.' })
+  @ApiOkResponse({ description: 'Kayıt durumu güncellendi.' })
   updateStatus(
     @Param('id') id: string,
     @Body() body: UpdateEntryStatusDto,
@@ -115,10 +129,10 @@ export class EntriesController {
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Kaydi sil',
-    description: 'Belirli bir kaydi kalici olarak siler.',
+    summary: 'Kaydı sil',
+    description: 'Belirli bir kaydı kalıcı olarak siler.',
   })
-  @ApiOkResponse({ description: 'Kayit silindi.' })
+  @ApiOkResponse({ description: 'Kayıt silindi.' })
   remove(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
     return this.entriesService.remove(id, user);
   }

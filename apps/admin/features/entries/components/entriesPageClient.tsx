@@ -3,14 +3,15 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { listContentTypes } from "@/features/content-types/api/content-types";
+import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
 import { createEntry, deleteEntry, listEntries } from "@/features/entries/api/entries";
 import { listMedia } from "@/features/media/api/media";
-import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
-import { ToastStack } from "@/shared/components/toast-stack";
-import { getAuthToken } from "@/shared/lib/auth-token";
-import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
-import { useToast } from "@/shared/hooks/use-toast";
+import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
+import { ToastStack } from "@/shared/components/toastStack";
+import { getAuthToken } from "@/shared/lib/authToken";
+import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
+import { useToast } from "@/shared/hooks/useToast";
+import { BackButton } from "@/shared/components/backButton";
 import type { ContentField, Entry, EntryStatus, MediaItem } from "@/types";
 
 const STATUS_OPTIONS: EntryStatus[] = ["DRAFT", "PUBLISHED"];
@@ -156,31 +157,36 @@ export function EntriesPageClient({ contentType }: Props) {
     setError(null);
 
     try {
-      const values = fields.flatMap((field) => {
+      const values: Array<{ fieldId: string; value?: unknown; mediaId?: string | null }> = [];
+
+      for (const field of fields) {
         if (field.type === "MEDIA") {
           const mediaId = fieldMediaIds[field.id] ?? "";
           if (!mediaId && !field.required) {
-            return [];
+            continue;
           }
 
-          return [{ fieldId: field.id, mediaId: mediaId || null }];
+          values.push({ fieldId: field.id, mediaId: mediaId || null });
+          continue;
         }
 
         if (field.type === "BOOLEAN") {
-          return [{ fieldId: field.id, value: fieldBooleans[field.id] ?? false }];
+          values.push({ fieldId: field.id, value: fieldBooleans[field.id] ?? false });
+          continue;
         }
 
         const raw = fieldValues[field.id] ?? "";
         if (!raw.trim() && !field.required) {
-          return [];
+          continue;
         }
 
         if (field.type === "NUMBER") {
-          return [{ fieldId: field.id, value: Number(raw) }];
+          values.push({ fieldId: field.id, value: Number(raw) });
+          continue;
         }
 
-        return [{ fieldId: field.id, value: raw }];
-      });
+        values.push({ fieldId: field.id, value: raw });
+      }
 
       await createEntry(
         contentType,
@@ -211,10 +217,10 @@ export function EntriesPageClient({ contentType }: Props) {
 
   const handleDeleteEntry = async (entryId: string) => {
     const shouldDelete = await confirmDestructiveAction({
-      title: "Kayit silinsin mi?",
-      text: "Bu islem geri alinmaz.",
+      title: "Kayıt silinsin mi?",
+      text: "Bu işlem geri alınmaz.",
       confirmText: "Sil",
-      cancelText: "Iptal",
+      cancelText: "İptal",
     });
     if (!shouldDelete) {
       return;
@@ -313,9 +319,14 @@ export function EntriesPageClient({ contentType }: Props) {
     <section className="page-card ui-elevate">
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
-      <p className="page-kicker">Kayıtlar</p>
-      <h1 className="page-title">Kayıtlar: {contentTypeName}</h1>
-      <p className="page-subtitle">Bu içerik tipi için kayıt ekleyin, filtreleyin ve durumunu yönetin.</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="page-kicker">Kayıtlar</p>
+          <h1 className="page-title">Kayıtlar: {contentTypeName}</h1>
+          <p className="page-subtitle">Bu içerik tipi için kayıt ekleyin, filtreleyin ve durumunu yönetin.</p>
+        </div>
+        <BackButton />
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {(["ALL", ...STATUS_OPTIONS] as const).map((option) => (
@@ -335,13 +346,15 @@ export function EntriesPageClient({ contentType }: Props) {
       </div>
 
       <form onSubmit={handleCreate} className="mt-4 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-3">
-        <input
-          className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
-          placeholder="Kayıt kısa adı (slug)"
-          value={slug}
-          onChange={(event) => setSlug(event.target.value)}
-          required
-        />
+        <div className="space-y-1">
+          <input
+            className="ui-control h-10 w-full rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+            placeholder="URL için kısa ad (isteğe bağlı)"
+            value={slug}
+            onChange={(event) => setSlug(event.target.value)}
+          />
+          <p className="text-xs text-slate-400">Örnek: blog-yazisi-1. Boş bırakırsan kayıt ID&apos;siyle açılır.</p>
+        </div>
         <select
           className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none"
           value={status}

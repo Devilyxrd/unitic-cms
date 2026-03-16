@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EntryStatus, FieldType, Prisma, Role } from '@prisma/client';
+import { EntryStatus, FieldType, Prisma } from '@prisma/client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
@@ -15,15 +15,14 @@ import { UpdateEntryDto } from './dto/update-entry.dto';
 export class EntriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private isEditorOwner(entry: { authorId: string | null }, actor: AuthUser): boolean {
-    return actor.role === 'ADMIN' || entry.authorId === actor.id;
+  private canManageEntry(actor: AuthUser): boolean {
+    return actor.role === 'ADMIN' || actor.role === 'EDITOR';
   }
 
-  async list(contentTypeSlug?: string, status?: EntryStatus, actor?: AuthUser) {
+  async list(contentTypeSlug?: string, status?: EntryStatus) {
     const where: Prisma.EntryWhereInput = {
       ...(contentTypeSlug ? { contentType: { slug: contentTypeSlug } } : {}),
       ...(status ? { status } : {}),
-      ...(actor && actor.role !== 'ADMIN' ? { authorId: actor.id } : {}),
     };
 
     const entries = await this.prisma.entry.findMany({
@@ -49,7 +48,7 @@ export class EntriesService {
       throw new NotFoundException('Kayıt bulunamadı.');
     }
 
-    if (actor && !this.isEditorOwner(entry, actor)) {
+    if (actor && !this.canManageEntry(actor)) {
       throw new ForbiddenException('Bu kaydı görüntüleme yetkiniz yok.');
     }
 
@@ -120,7 +119,7 @@ export class EntriesService {
       throw new NotFoundException('Kayıt bulunamadı.');
     }
 
-    if (actor && !this.isEditorOwner(entry, actor)) {
+    if (actor && !this.canManageEntry(actor)) {
       throw new ForbiddenException('Bu kaydı düzenleme yetkiniz yok.');
     }
 
@@ -172,8 +171,10 @@ export class EntriesService {
       throw new NotFoundException('Kayıt bulunamadı.');
     }
 
-    if (actor && !this.isEditorOwner(entry, actor)) {
-      throw new ForbiddenException('Bu kaydın durumunu değiştirme yetkiniz yok.');
+    if (actor && !this.canManageEntry(actor)) {
+      throw new ForbiddenException(
+        'Bu kaydın durumunu değiştirme yetkiniz yok.',
+      );
     }
 
     try {
@@ -192,7 +193,7 @@ export class EntriesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException('Kayıt bulunamadı.');;
+        throw new NotFoundException('Kayıt bulunamadı.');
       }
       throw error;
     }
@@ -208,7 +209,7 @@ export class EntriesService {
       throw new NotFoundException('Kayıt bulunamadı.');
     }
 
-    if (actor && !this.isEditorOwner(entry, actor)) {
+    if (actor && !this.canManageEntry(actor)) {
       throw new ForbiddenException('Bu kaydı silme yetkiniz yok.');
     }
 

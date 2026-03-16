@@ -3,12 +3,12 @@
 import { ChangeEvent, useEffect, useState } from "react";
 
 import { deleteMedia, listMedia, uploadMedia } from "@/features/media/api/media";
-import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
-import { ToastStack } from "@/shared/components/toast-stack";
-import { apiClient } from "@/shared/lib/api-client";
-import { getAuthToken } from "@/shared/lib/auth-token";
-import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
-import { useToast } from "@/shared/hooks/use-toast";
+import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
+import { ToastStack } from "@/shared/components/toastStack";
+import { apiClient } from "@/shared/lib/apiClient";
+import { getAuthToken } from "@/shared/lib/authToken";
+import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
+import { useToast } from "@/shared/hooks/useToast";
 import type { MediaItem, User } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -65,15 +65,18 @@ export function MediaPageClient() {
       return;
     }
 
-    if (currentUser?.role !== "ADMIN") {
+    if (!currentUser) {
       setLoading(false);
       setItems([]);
-      setError(null);
+      setError("Medya kütüphanesi için giriş yapılmalı.");
       return;
     }
 
     void load();
-  }, [authChecked, currentUser?.role]);
+  }, [authChecked, currentUser]);
+
+  const canUpload = currentUser?.role === "ADMIN" || currentUser?.role === "EDITOR";
+  const canDelete = currentUser?.role === "ADMIN";
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -137,14 +140,14 @@ export function MediaPageClient() {
 
       {!authChecked ? <LoadingBlock title="Yetki kontrolü yapılıyor..." /> : null}
 
-      {authChecked && currentUser?.role !== "ADMIN" ? (
+      {authChecked && !canUpload ? (
         <ErrorBlock
           title="Yetkisiz işlem"
-          description="Medya kütüphanesi sadece admin rolü için erişilebilir."
+          description="Medya kütüphanesi için admin veya editor rolü gerekir."
         />
       ) : null}
 
-      {authChecked && currentUser?.role === "ADMIN" ? (
+      {authChecked && canUpload ? (
         <>
           <div className="mt-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4">
             <label className="text-sm font-medium text-slate-100">Dosya yükle</label>
@@ -174,16 +177,18 @@ export function MediaPageClient() {
                   <a href={resolveMediaUrl(item.url)} target="_blank" rel="noreferrer" className="ui-control mt-3 inline-flex rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
                     Dosyayı aç
                   </a>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(item)}
-                      disabled={deletingId === item.id}
-                      className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
-                    >
-                      {deletingId === item.id ? "Siliniyor..." : "Sil"}
-                    </button>
-                  </div>
+                  {canDelete ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(item)}
+                        disabled={deletingId === item.id}
+                        className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
+                      >
+                        {deletingId === item.id ? "Siliniyor..." : "Sil"}
+                      </button>
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>

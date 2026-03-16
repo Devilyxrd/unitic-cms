@@ -1,6 +1,6 @@
 export type Id = string;
 
-export type Role = "ADMIN" | "EDITOR";
+export type Role = "ADMIN" | "EDITOR" | "USER";
 
 export type EntryStatus = "DRAFT" | "PUBLISHED";
 

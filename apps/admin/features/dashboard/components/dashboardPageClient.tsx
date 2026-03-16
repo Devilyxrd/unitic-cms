@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ROUTES } from "@/constants/routes";
-import { listContentTypes } from "@/features/content-types/api/content-types";
+import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
 import { listEntries } from "@/features/entries/api/entries";
 import { listMedia } from "@/features/media/api/media";
 import { listUsers } from "@/features/users/api/users";
-import { ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
-import { apiClient } from "@/shared/lib/api-client";
+import { ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
+import { apiClient } from "@/shared/lib/apiClient";
 import type { Entry, User } from "@/types";
 
 type DashboardStats = {
@@ -216,7 +216,7 @@ export function DashboardPageClient() {
             {QUICK_ACTIONS.filter((action) => {
               if (
                 currentUser?.role === "EDITOR" &&
-                (action.href === ROUTES.users || action.href === ROUTES.contentTypes)
+                action.href === ROUTES.users
               ) {
                 return false;
               }

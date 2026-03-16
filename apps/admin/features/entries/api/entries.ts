@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/lib/api-client";
+import { apiClient } from "@/shared/lib/apiClient";
 import type { ApiListResponse, Entry, EntryStatus } from "@/types";
 
 export type CreateEntryPayload = {
@@ -26,8 +26,10 @@ function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | un
 }
 
 export async function listEntries(params: { contentTypeSlug: string; status?: EntryStatus }, token: string | null) {
-  const query = new URLSearchParams({ contentType: params.contentTypeSlug, ...(params.status ? { status: params.status } : {}) });
-  const response = await apiClient<Entry[] | ApiListResponse<Entry> | null>(`/entries?${query.toString()}`, {
+  const path = params.status
+    ? `/entries/content-type/${encodeURIComponent(params.contentTypeSlug)}/status/${encodeURIComponent(params.status)}`
+    : `/entries/content-type/${encodeURIComponent(params.contentTypeSlug)}`;
+  const response = await apiClient<Entry[] | ApiListResponse<Entry> | null>(path, {
     token: token ?? undefined,
     method: "GET",
   });
@@ -39,7 +41,7 @@ export async function getEntryById(entryId: string, token: string | null) {
 }
 
 export async function createEntry(contentTypeSlug: string, payload: CreateEntryPayload, token: string | null) {
-  return apiClient<Entry>(`/entries?contentType=${encodeURIComponent(contentTypeSlug)}`, {
+  return apiClient<Entry>(`/entries/content-type/${encodeURIComponent(contentTypeSlug)}`, {
     token: token ?? undefined,
     method: "POST",
     body: JSON.stringify(payload),

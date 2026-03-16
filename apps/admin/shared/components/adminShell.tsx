@@ -16,9 +16,9 @@ type AdminShellProps = {
 export function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const isLoginPage = pathname === ROUTES.login;
+  const isAuthPage = pathname === ROUTES.login || pathname === ROUTES.register;
 
-  if (isLoginPage) {
+  if (isAuthPage) {
     return <>{children}</>;
   }
 

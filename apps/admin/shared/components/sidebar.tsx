@@ -7,14 +7,13 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ApiClientError,
   apiClient,
-} from "@/shared/lib/api-client";
+} from "@/shared/lib/apiClient";
 import type { Role, User } from "@/types";
 import {
   type LucideIcon,
   Image as ImageIcon,
   LayoutDashboard,
   Network,
-  Settings,
   Shapes,
   UserRound,
   X,
@@ -68,7 +67,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const visibleNavItems = useMemo(() => {
     if (currentUser?.role === "EDITOR") {
       return NAV_ITEMS.filter(
-        (item) => item.href !== ROUTES.users && item.href !== ROUTES.contentTypes && item.href !== ROUTES.media,
+        (item) => item.href !== ROUTES.users,
       );
     }
 
@@ -82,6 +81,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     if (role === "EDITOR") {
       return "Editor";
+    }
+
+    if (role === "USER") {
+      return "Kullanıcı";
     }
 
     return "Role";
@@ -160,13 +163,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </div>
 
       <div className="border-t border-(--line) p-4">
-        <Link
-          href="#"
-          className="ui-control flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-slate-100"
-        >
-          <Settings className="h-4 w-4" />
-          <span>Ayarlar</span>
-        </Link>
 
         <button
           type="button"

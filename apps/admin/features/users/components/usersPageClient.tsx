@@ -4,18 +4,26 @@ import { FormEvent, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import { createUser, deleteUser, listUsers, setUserActive, updateUser } from "@/features/users/api/users";
-import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
-import { ToastStack } from "@/shared/components/toast-stack";
-import { apiClient } from "@/shared/lib/api-client";
-import { getAuthToken } from "@/shared/lib/auth-token";
-import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
-import { useToast } from "@/shared/hooks/use-toast";
+import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
+import { ToastStack } from "@/shared/components/toastStack";
+import { apiClient } from "@/shared/lib/apiClient";
+import { getAuthToken } from "@/shared/lib/authToken";
+import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
+import { useToast } from "@/shared/hooks/useToast";
 import type { Role, User } from "@/types";
 
-const ROLE_OPTIONS: Role[] = ["ADMIN", "EDITOR"];
+const ROLE_OPTIONS: Role[] = ["ADMIN", "EDITOR", "USER"];
 
 function roleLabel(role: Role) {
-  return role === "ADMIN" ? "Yönetici" : "Editör";
+  if (role === "ADMIN") {
+    return "Yönetici";
+  }
+
+  if (role === "EDITOR") {
+    return "Editör";
+  }
+
+  return "Kullanıcı";
 }
 
 export function UsersPageClient() {
@@ -34,6 +42,9 @@ export function UsersPageClient() {
   const [creating, setCreating] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+  const isStrongPassword = (value: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(value);
 
   useEffect(() => {
     const loadCurrentUser = async () => {
@@ -80,6 +91,15 @@ export function UsersPageClient() {
     event.preventDefault();
     setCreating(true);
     setError(null);
+
+    if (!isStrongPassword(password)) {
+      const message = "Şifre en az 8 karakter olmalı; 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter içermelidir.";
+      setError(message);
+      showError("Şifre geçersiz", message);
+      setCreating(false);
+      return;
+    }
+
     try {
       await createUser({ email, username, password, role }, getAuthToken());
       setEmail("");
@@ -125,6 +145,7 @@ export function UsersPageClient() {
         <select id="swal-user-role" class="swal2-input">
           <option value="ADMIN" ${user.role === "ADMIN" ? "selected" : ""}>Yonetici</option>
           <option value="EDITOR" ${user.role === "EDITOR" ? "selected" : ""}>Editor</option>
+          <option value="USER" ${user.role === "USER" ? "selected" : ""}>Kullanici</option>
         </select>
       `,
       showCancelButton: true,
@@ -140,6 +161,11 @@ export function UsersPageClient() {
 
         if (!email || !username || !roleValue) {
           Swal.showValidationMessage("E-posta, kullanici adi ve rol zorunlu.");
+          return null;
+        }
+
+        if (password && !isStrongPassword(password)) {
+          Swal.showValidationMessage("Şifre en az 8 karakter olmalı; 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter içermelidir.");
           return null;
         }
 

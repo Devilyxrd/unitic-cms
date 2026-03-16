@@ -1,6 +1,6 @@
 "use client";
 
-import type { ToastItem } from "@/shared/hooks/use-toast";
+import type { ToastItem } from "@/shared/hooks/useToast";
 
 type ToastStackProps = {
   toasts: ToastItem[];

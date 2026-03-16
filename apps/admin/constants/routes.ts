@@ -2,7 +2,7 @@ export const ROUTES = {
   login: "/login",
   register: "/register",
   dashboard: "/dashboard",
-  contentTypes: "/content-types",
+  contentTypes: "/contentTypes",
   media: "/media",
   users: "/users",
 } as const;

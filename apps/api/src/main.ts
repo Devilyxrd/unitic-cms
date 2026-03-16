@@ -45,9 +45,9 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Unitic CMS API Dokumantasyonu')
+    .setTitle('Unitic CMS API Dokümantasyonu')
     .setDescription(
-      'Unitic CMS backend endpointleri, istek ve yanit semalari, yetki gereksinimleri ve ornek kullanim aciklamalari.',
+      'Unitic CMS backend endpointleri, istek ve yanıt şemaları, yetki gereksinimleri ve örnek kullanım açıklamaları.',
     )
     .setVersion('1.0.0')
     .addBearerAuth(
@@ -55,7 +55,7 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'JWT token degerini Bearer ile birlikte gonderin.',
+        description: 'JWT token değerini Bearer ile birlikte gönderin.',
       },
       'bearer',
     )

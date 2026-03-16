@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/lib/api-client";
+import { apiClient } from "@/shared/lib/apiClient";
 import type { ApiListResponse, Role, User } from "@/types";
 
 export type CreateUserPayload = {

@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
 import { AuthService } from './auth.service';
 
@@ -22,7 +21,13 @@ describe('AuthService', () => {
     signAsync: jest.fn(),
   };
 
-  const authService = new AuthService(prismaMock, jwtServiceMock);
+  const authService = new AuthService(
+    prismaMock as unknown as { user: typeof prismaMock.user },
+    jwtServiceMock as unknown as { signAsync: typeof jwtServiceMock.signAsync },
+  );
+
+  const compareMock = compare as jest.MockedFunction<typeof compare>;
+  const hashMock = hash as jest.MockedFunction<typeof hash>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -37,7 +42,7 @@ describe('AuthService', () => {
       role: Role.ADMIN,
       isActive: true,
     });
-    compare.mockResolvedValue(true);
+    compareMock.mockResolvedValue(true);
     jwtServiceMock.signAsync.mockResolvedValue('jwt-token');
     prismaMock.user.update.mockResolvedValue(undefined);
 
@@ -54,15 +59,14 @@ describe('AuthService', () => {
     });
   });
 
-  it('registers editor user and returns session payload', async () => {
-    hash.mockResolvedValue('hashed-password');
+  it('registers user with USER role and returns user payload', async () => {
+    hashMock.mockResolvedValue('hashed-password');
     prismaMock.user.create.mockResolvedValue({
       id: 'user-2',
       email: 'editor@unitic.dev',
       username: 'editor',
-      role: Role.EDITOR,
+      role: Role.USER,
     });
-    jwtServiceMock.signAsync.mockResolvedValue('jwt-token');
 
     const result = await authService.register({
       email: 'editor@unitic.dev',
@@ -75,26 +79,27 @@ describe('AuthService', () => {
         email: 'editor@unitic.dev',
         username: 'editor',
         password: 'hashed-password',
-        role: Role.EDITOR,
+        role: Role.USER,
       },
     });
     expect(result).toEqual({
-      token: 'jwt-token',
       user: {
         id: 'user-2',
         email: 'editor@unitic.dev',
         username: 'editor',
-        role: Role.EDITOR,
+        role: Role.USER,
       },
     });
   });
 
   it('throws conflict for duplicate registration data', async () => {
-    hash.mockResolvedValue('hashed-password');
-    prismaMock.user.create.mockRejectedValue({
-      code: 'P2002',
-      constructor: { name: 'PrismaClientKnownRequestError' },
-    });
+    hashMock.mockResolvedValue('hashed-password');
+    prismaMock.user.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('conflict', {
+        code: 'P2002',
+        clientVersion: '7.5.0',
+      }),
+    );
 
     await expect(
       authService.register({
@@ -102,7 +107,9 @@ describe('AuthService', () => {
         username: 'editor',
         password: 'Editor123!',
       }),
-    ).rejects.toThrow(new ConflictException('E-posta veya kullanıcı adı zaten kullanımda.'));
+    ).rejects.toThrow(
+      new ConflictException('E-posta veya kullanıcı adı zaten kullanımda.'),
+    );
   });
 
   it('throws unauthorized for inactive user', async () => {
@@ -115,8 +122,29 @@ describe('AuthService', () => {
       isActive: false,
     });
 
-    await expect(authService.login('admin@unitic.dev', 'Admin123!')).rejects.toThrow(
+    await expect(
+      authService.login('admin@unitic.dev', 'Admin123!'),
+    ).rejects.toThrow(
       new UnauthorizedException('Kullanıcı hesabı pasif durumda.'),
+    );
+  });
+
+  it('throws unauthorized for USER role', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 'user-3',
+      email: 'user@unitic.dev',
+      username: 'user',
+      password: 'hashed-password',
+      role: Role.USER,
+      isActive: true,
+    });
+
+    await expect(
+      authService.login('user@unitic.dev', 'User123!'),
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Bu panel yalnızca admin ve editör kullanıcıları içindir.',
+      ),
     );
   });
 
@@ -129,10 +157,10 @@ describe('AuthService', () => {
       role: Role.ADMIN,
       isActive: true,
     });
-    compare.mockResolvedValue(false);
+    compareMock.mockResolvedValue(false);
 
-    await expect(authService.login('admin@unitic.dev', 'wrong')).rejects.toThrow(
-      new UnauthorizedException('E-posta veya şifre hatalı.'),
-    );
+    await expect(
+      authService.login('admin@unitic.dev', 'wrong'),
+    ).rejects.toThrow(new UnauthorizedException('E-posta veya şifre hatalı.'));
   });
 });

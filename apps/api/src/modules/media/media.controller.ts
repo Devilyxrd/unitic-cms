@@ -33,17 +33,18 @@ export class MediaController {
   @Get()
   @ApiOperation({
     summary: 'Medya listesini getir',
-    description: 'Yuklenen medya dosyalarini listeler.',
+    description: 'Yüklenen medya dosyalarını listeler.',
   })
-  @ApiOkResponse({ description: 'Medya listesi donduruldu.' })
+  @ApiOkResponse({ description: 'Medya listesi döndürüldü.' })
   list() {
     return this.mediaService.list();
   }
 
   @Post()
   @ApiOperation({
-    summary: 'Medya yukle',
-    description: 'Tek bir dosyayi medya kutuphanesine yukler. Desteklenen turler: resimler (JPEG, PNG, GIF, WebP, SVG), PDF, ofis dokumentleri (DOC, DOCX, XLS, XLSX), metin dosyalari, ses, video.',
+    summary: 'Medya yükle',
+    description:
+      'Tek bir dosyayı medya kütüphanesine yükler. Desteklenen türler: resimler (JPEG, PNG, GIF, WebP, SVG), PDF, ofis dokümanları (DOC, DOCX, XLS, XLSX), metin dosyaları, ses, video.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -53,16 +54,22 @@ export class MediaController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Yuklenecek dosya (max 10 MB)',
+          description: 'Yüklenecek dosya (max 10 MB)',
         },
       },
       required: ['file'],
     },
   })
-  @ApiOkResponse({ description: 'Medya basariyla yuklendi.' })
-  @ApiPayloadTooLargeResponse({ description: 'Dosya boyutu 10 MB limiti asamaz.' })
-  @ApiUnsupportedMediaTypeResponse({ description: 'Desteklenmeyen dosya turu.' })
-  @ApiForbiddenResponse({ description: 'Yalnizca ADMIN ve EDITOR yukleme yapabilir.' })
+  @ApiOkResponse({ description: 'Medya başarıyla yüklendi.' })
+  @ApiPayloadTooLargeResponse({
+    description: 'Dosya boyutu 10 MB limiti aşamaz.',
+  })
+  @ApiUnsupportedMediaTypeResponse({
+    description: 'Desteklenmeyen dosya türü.',
+  })
+  @ApiForbiddenResponse({
+    description: 'Yalnızca ADMIN ve EDITOR yükleme yapabilir.',
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
@@ -77,11 +84,11 @@ export class MediaController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({
-    summary: 'Medyayi sil',
-    description: 'Belirtilen medya kaydini ve dosyasini siler.',
+    summary: 'Medyayı sil',
+    description: 'Belirtilen medya kaydını ve dosyasını siler.',
   })
   @ApiOkResponse({ description: 'Medya silindi.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   remove(@Param('id') id: string) {
     return this.mediaService.remove(id);
   }

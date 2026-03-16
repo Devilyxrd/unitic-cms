@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/lib/api-client";
+import { apiClient } from "@/shared/lib/apiClient";
 import type { ApiListResponse, MediaItem } from "@/types";
 
 function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | undefined): T[] {

@@ -1,4 +1,6 @@
-import { LoginForm } from "@/features/auth/components/login-form";
+import { Suspense } from "react";
+
+import { LoginForm } from "@/features/auth/components/loginForm";
 
 export default function LoginPage() {
   return (
@@ -9,7 +11,9 @@ export default function LoginPage() {
         <p className="mt-2 text-sm text-slate-300">Devam etmek için hesap bilgilerinizi girin.</p>
 
         <div className="mt-6">
-          <LoginForm />
+          <Suspense fallback={<p className="text-sm text-slate-400">Form hazırlanıyor...</p>}>
+            <LoginForm />
+          </Suspense>
         </div>
       </section>
     </main>

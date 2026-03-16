@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { hash } from 'bcryptjs';
@@ -17,17 +16,18 @@ describe('UsersService', () => {
     },
   };
 
-  const usersService = new UsersService(prismaMock);
+  const usersService = new UsersService(
+    prismaMock as unknown as { user: typeof prismaMock.user },
+  );
+
+  const hashMock = hash as jest.MockedFunction<typeof hash>;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('lists users with total count', async () => {
-    prismaMock.user.findMany.mockResolvedValue([
-      { id: '1' },
-      { id: '2' },
-    ]);
+    prismaMock.user.findMany.mockResolvedValue([{ id: '1' }, { id: '2' }]);
 
     const result = await usersService.list();
 
@@ -38,7 +38,7 @@ describe('UsersService', () => {
   });
 
   it('throws conflict exception for duplicate email/username', async () => {
-    hash.mockResolvedValue('hashed-password');
+    hashMock.mockResolvedValue('hashed-password');
     prismaMock.user.create.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('conflict', {
         code: 'P2002',
@@ -53,7 +53,9 @@ describe('UsersService', () => {
         password: 'Editor123!',
         role: Role.EDITOR,
       }),
-    ).rejects.toThrow(new ConflictException('E-posta veya kullanıcı adı zaten kullanımda.'));
+    ).rejects.toThrow(
+      new ConflictException('E-posta veya kullanıcı adı zaten kullanımda.'),
+    );
   });
 
   it('throws not found when updating unknown user active status', async () => {

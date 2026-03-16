@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 
-import { AdminShell } from "@/shared/components/admin-shell";
+import { AdminShell } from "@/shared/components/adminShell";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Unitic CMS Yönetim",
@@ -22,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className={`${spaceGrotesk.variable} antialiased`}>
+      <body className="antialiased">
         <AdminShell>{children}</AdminShell>
         <Toaster
           position="top-right"

@@ -63,7 +63,9 @@ export class MediaService {
 
   private resolveExtension(filename: string): string {
     const lastDotIndex = filename.lastIndexOf('.');
-    return lastDotIndex > 0 ? filename.substring(lastDotIndex).toLowerCase() : '';
+    return lastDotIndex > 0
+      ? filename.substring(lastDotIndex).toLowerCase()
+      : '';
   }
 
   async list() {
@@ -122,7 +124,10 @@ export class MediaService {
       originalName.lastIndexOf('.'),
     );
     const secondaryExtension = this.resolveExtension(nameWithoutExtension);
-    if (secondaryExtension && this.dangerousExtensions.has(secondaryExtension)) {
+    if (
+      secondaryExtension &&
+      this.dangerousExtensions.has(secondaryExtension)
+    ) {
       throw new BadRequestException('Çift uzantılı zararlı dosya algılandı.');
     }
 

@@ -8,7 +8,7 @@ export default function EntriesIndexPage() {
         Önce bir içerik tipi seçin, ardından ilgili liste sayfasından kayıtlarını yönetin.
       </p>
       <Link
-        href="/content-types"
+        href="/contentTypes"
         className="ui-control inline-flex items-center rounded-md border border-(--line) px-3 py-2 text-sm font-medium text-slate-100"
       >
         İçerik tiplerine git

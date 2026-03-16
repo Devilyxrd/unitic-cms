@@ -2,13 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { ROUTES } from "@/constants/routes";
-import { useLogin } from "@/features/auth/hooks/use-login";
+import { useLogin } from "@/features/auth/hooks/useLogin";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loading, error, submit } = useLogin();
 
   const [email, setEmail] = useState("");
@@ -28,6 +29,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {searchParams?.get("registered") === "1" ? (
+        <div className="rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+          Kayıt oluşturuldu. Admin paneline erişim için rol ataması gerekir. Admin veya editör hesabıyla giriş yapabilirsiniz.
+        </div>
+      ) : null}
       <div className="space-y-1">
         <label htmlFor="email" className="block text-sm font-medium text-slate-400">
           E-posta

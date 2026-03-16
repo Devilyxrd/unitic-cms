@@ -2,13 +2,14 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
-import { listContentTypes } from "@/features/content-types/api/content-types";
+import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
 import { getEntryById, updateEntry } from "@/features/entries/api/entries";
 import { listMedia } from "@/features/media/api/media";
-import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
-import { ToastStack } from "@/shared/components/toast-stack";
-import { getAuthToken } from "@/shared/lib/auth-token";
-import { useToast } from "@/shared/hooks/use-toast";
+import { BackButton } from "@/shared/components/backButton";
+import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
+import { ToastStack } from "@/shared/components/toastStack";
+import { getAuthToken } from "@/shared/lib/authToken";
+import { useToast } from "@/shared/hooks/useToast";
 import type { ContentField, Entry, EntryStatus, MediaItem } from "@/types";
 
 function statusLabel(status: EntryStatus) {
@@ -50,7 +51,7 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
 
       const currentContentType = allContentTypes.find((item) => item.slug === contentType);
       if (!currentContentType) {
-        throw new Error("Icerik tipi bulunamadi.");
+        throw new Error("İçerik tipi bulunamadı.");
       }
 
       setEntry(data);
@@ -98,7 +99,7 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [entryId]);
+  }, [entryId, contentType]);
 
   useEffect(() => {
     void load();
@@ -214,7 +215,7 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
 
     const validationError = getValidationError();
     if (validationError) {
-      showError("Kayit guncellenemedi", validationError);
+      showError("Kayıt güncellenemedi", validationError);
       return;
     }
 
@@ -222,30 +223,35 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
     setError(null);
 
     try {
-      const values = fields.flatMap((field) => {
+      const values: Array<{ fieldId: string; value?: unknown; mediaId?: string | null }> = [];
+
+      for (const field of fields) {
         if (field.type === "MEDIA") {
           const mediaId = fieldMediaIds[field.id] ?? "";
           if (!mediaId && !field.required) {
-            return [];
+            continue;
           }
-          return [{ fieldId: field.id, mediaId: mediaId || null }];
+          values.push({ fieldId: field.id, mediaId: mediaId || null });
+          continue;
         }
 
         if (field.type === "BOOLEAN") {
-          return [{ fieldId: field.id, value: fieldBooleans[field.id] ?? false }];
+          values.push({ fieldId: field.id, value: fieldBooleans[field.id] ?? false });
+          continue;
         }
 
         const raw = fieldValues[field.id] ?? "";
         if (!raw.trim() && !field.required) {
-          return [];
+          continue;
         }
 
         if (field.type === "NUMBER") {
-          return [{ fieldId: field.id, value: Number(raw) }];
+          values.push({ fieldId: field.id, value: Number(raw) });
+          continue;
         }
 
-        return [{ fieldId: field.id, value: raw }];
-      });
+        values.push({ fieldId: field.id, value: raw });
+      }
 
       await updateEntry(
         entryId,
@@ -257,7 +263,7 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
         getAuthToken(),
       );
 
-      showSuccess("Kayit guncellendi", "Degisiklikler kaydedildi.");
+      showSuccess("Kayıt güncellendi", "Değişiklikler kaydedildi.");
       await load();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Kayıt güncellenemedi.";
@@ -276,9 +282,14 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
     <section className="page-card ui-elevate">
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
-      <p className="page-kicker">Kayıt Detayı</p>
-      <h1 className="page-title">Kayıt: {entry.slug || entry.id}</h1>
-      <p className="page-subtitle">İçerik tipi: {contentType}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="page-kicker">Kayıt Detayı</p>
+          <h1 className="page-title">Kayıt: {entry.slug || entry.id}</h1>
+          <p className="page-subtitle">İçerik tipi: {contentType}</p>
+        </div>
+        <BackButton />
+      </div>
 
       <div className="mt-3 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-2">
         <div>
@@ -293,13 +304,14 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
 
       <form onSubmit={handleSubmit} className="mt-2 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-2">
         <div className="space-y-1">
-          <label className="block text-xs font-medium uppercase tracking-[0.06em] text-slate-400">Slug</label>
+          <label className="block text-xs font-medium uppercase tracking-[0.06em] text-slate-400">Slug (URL için kısa ad)</label>
           <input
             className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
-            placeholder="kayit-slug"
+            placeholder="ornek-kayit"
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
           />
+          <p className="mt-1 text-xs text-slate-400">Boş bırakırsan kayıt ID&apos;siyle açılır.</p>
         </div>
 
         <div className="space-y-1">
@@ -329,7 +341,7 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
             disabled={saving}
             className="ui-control h-10 rounded-lg bg-(--brand) px-4 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {saving ? "Kaydediliyor..." : "Degisiklikleri Kaydet"}
+            {saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
           </button>
         </div>
       </form>

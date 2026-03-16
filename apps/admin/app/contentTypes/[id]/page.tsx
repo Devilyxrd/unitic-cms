@@ -1,4 +1,4 @@
-import { ContentTypeDetailClient } from "@/features/content-types/components/content-type-detail-client";
+import { ContentTypeDetailClient } from "@/features/contentTypes/components/contentTypeDetailClient";
 
 type ContentTypeDetailPageProps = {
   params: Promise<{ id: string }>;

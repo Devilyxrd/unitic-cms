@@ -1,35 +1,51 @@
-// @ts-nocheck
-import { UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 describe('JwtAuthGuard', () => {
-  const reflectorMock = {
-    getAllAndOverride: jest.fn(),
+  const getAllAndOverride = jest.fn<
+    boolean | undefined,
+    [unknown, unknown[]]
+  >();
+  const reflectorMock: Pick<Reflector, 'getAllAndOverride'> = {
+    getAllAndOverride,
   };
 
-  const jwtServiceMock = {
-    verify: jest.fn(),
+  const verify = jest.fn<
+    ReturnType<JwtService['verify']>,
+    Parameters<JwtService['verify']>
+  >();
+  const jwtServiceMock: Pick<JwtService, 'verify'> = {
+    verify,
   };
 
-  const guard = new JwtAuthGuard(reflectorMock, jwtServiceMock);
+  const guard = new JwtAuthGuard(
+    reflectorMock as Reflector,
+    jwtServiceMock as JwtService,
+  );
 
-  const createContext = (request) =>
+  const createContext = (request: {
+    headers: { authorization?: string };
+    cookies?: Record<string, string | undefined>;
+    user?: unknown;
+  }): ExecutionContext =>
     ({
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
       switchToHttp: () => ({
         getRequest: () => request,
       }),
-    });
+    }) as unknown as ExecutionContext;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    reflectorMock.getAllAndOverride.mockReturnValue(false);
+    getAllAndOverride.mockReturnValue(false);
   });
 
   it('allows public routes', () => {
-    reflectorMock.getAllAndOverride.mockReturnValue(true);
+    getAllAndOverride.mockReturnValue(true);
 
     const canActivate = guard.canActivate(createContext({}));
 
@@ -38,7 +54,7 @@ describe('JwtAuthGuard', () => {
   });
 
   it('accepts bearer token from authorization header', () => {
-    jwtServiceMock.verify.mockReturnValue({
+    verify.mockReturnValue({
       id: 'user-1',
       email: 'admin@unitic.dev',
       role: Role.ADMIN,
@@ -53,13 +69,13 @@ describe('JwtAuthGuard', () => {
     const canActivate = guard.canActivate(createContext(request));
 
     expect(canActivate).toBe(true);
-    expect(jwtServiceMock.verify).toHaveBeenCalledWith('token-value', {
+    expect(verify).toHaveBeenCalledWith('token-value', {
       secret: process.env.JWT_SECRET ?? 'dev-secret',
     });
   });
 
   it('accepts token from cookie when header does not exist', () => {
-    jwtServiceMock.verify.mockReturnValue({
+    verify.mockReturnValue({
       id: 'user-2',
       email: 'editor@unitic.dev',
       role: Role.EDITOR,
@@ -75,7 +91,7 @@ describe('JwtAuthGuard', () => {
     const canActivate = guard.canActivate(createContext(request));
 
     expect(canActivate).toBe(true);
-    expect(jwtServiceMock.verify).toHaveBeenCalledWith('cookie-token', {
+    expect(verify).toHaveBeenCalledWith('cookie-token', {
       secret: process.env.JWT_SECRET ?? 'dev-secret',
     });
   });

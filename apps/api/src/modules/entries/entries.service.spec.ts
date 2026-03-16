@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntryStatus, FieldType, Prisma, Role } from '@prisma/client';
 import { EntriesService } from './entries.service';
@@ -16,7 +15,12 @@ describe('EntriesService', () => {
     },
   };
 
-  const entriesService = new EntriesService(prismaMock);
+  const entriesService = new EntriesService(
+    prismaMock as unknown as {
+      contentType: typeof prismaMock.contentType;
+      entry: typeof prismaMock.entry;
+    },
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -79,8 +83,8 @@ describe('EntriesService', () => {
       }),
     );
 
-    await expect(entriesService.updateStatus('unknown', EntryStatus.PUBLISHED)).rejects.toThrow(
-      new NotFoundException('Kayıt bulunamadı.'),
-    );
+    await expect(
+      entriesService.updateStatus('unknown', EntryStatus.PUBLISHED),
+    ).rejects.toThrow(new NotFoundException('Kayıt bulunamadı.'));
   });
 });

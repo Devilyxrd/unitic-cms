@@ -33,8 +33,16 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
     return { ok: false, message: "E-posta, kullanıcı adı ve şifre zorunludur." };
   }
 
-  if (payload.password.length < 6) {
-    return { ok: false, message: "Şifre en az 6 karakter olmalıdır." };
+  if (payload.password.length < 8) {
+    return { ok: false, message: "Şifre en az 8 karakter olmalıdır." };
+  }
+
+  const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+  if (!strongPassword.test(payload.password)) {
+    return {
+      ok: false,
+      message: "Şifre en az 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter içermelidir.",
+    };
   }
 
   try {

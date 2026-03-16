@@ -9,6 +9,7 @@ datasource db {
 enum Role {
   ADMIN
   EDITOR
+  USER
 }
 
 enum EntryStatus {
@@ -30,7 +31,7 @@ model User {
   email     String   @unique
   username  String   @unique
   password  String
-  role      Role     @default(EDITOR)
+  role      Role     @default(USER)
 
   isActive Boolean @default(true)
   lastLoginAt DateTime?

@@ -140,7 +140,9 @@ export class ContentTypesService {
         ...(payload.name !== undefined ? { name: payload.name } : {}),
         ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
         ...(payload.type !== undefined ? { type: payload.type } : {}),
-        ...(payload.required !== undefined ? { required: payload.required } : {}),
+        ...(payload.required !== undefined
+          ? { required: payload.required }
+          : {}),
       },
     });
 

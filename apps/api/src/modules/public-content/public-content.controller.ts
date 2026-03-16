@@ -3,34 +3,34 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
 import { PublicContentService } from './public-content.service';
 
-@ApiTags('Public Icerik')
-@Controller('public')
+@ApiTags('Public İçerik')
+@Controller('api/public')
 @Public()
 export class PublicContentController {
   constructor(private readonly publicContentService: PublicContentService) {}
 
-  @Get(':contentTypeSlug')
+  @Get(':contentType')
   @ApiOperation({
-    summary: 'Yayinlanmis icerikleri listele',
+    summary: 'Yayınlanmış içerikleri listele',
     description:
-      'Belirtilen icerik tipi slug degerine ait yayinlanmis kayitlari getirir.',
+      'Belirtilen içerik tipi slug değerine ait yayınlanmış kayıtları getirir.',
   })
-  @ApiOkResponse({ description: 'Yayinlanmis icerikler donduruldu.' })
-  list(@Param('contentTypeSlug') contentTypeSlug: string) {
-    return this.publicContentService.listByContentType(contentTypeSlug);
+  @ApiOkResponse({ description: 'Yayınlanmış içerikler döndürüldü.' })
+  list(@Param('contentType') contentType: string) {
+    return this.publicContentService.listByContentType(contentType);
   }
 
-  @Get(':contentTypeSlug/:entrySlug')
+  @Get(':contentType/:slug')
   @ApiOperation({
-    summary: 'Yayinlanmis icerik detayi',
+    summary: 'Yayınlanmış içerik detayı',
     description:
-      'Belirtilen icerik tipi ve entry slug degeriyle tek bir yayinlanmis icerik getirir.',
+      'Belirtilen içerik tipi ve entry slug değeriyle tek bir yayınlanmış içerik getirir.',
   })
-  @ApiOkResponse({ description: 'Yayinlanmis icerik detayi donduruldu.' })
+  @ApiOkResponse({ description: 'Yayınlanmış içerik detayı döndürüldü.' })
   getBySlug(
-    @Param('contentTypeSlug') contentTypeSlug: string,
-    @Param('entrySlug') entrySlug: string,
+    @Param('contentType') contentType: string,
+    @Param('slug') slug: string,
   ) {
-    return this.publicContentService.getBySlug(contentTypeSlug, entrySlug);
+    return this.publicContentService.getBySlug(contentType, slug);
   }
 }

@@ -1,4 +1,4 @@
-import { EntriesPageClient } from "@/features/entries/components/entries-page-client";
+import { EntriesPageClient } from "@/features/entries/components/entriesPageClient";
 
 type EntriesPageProps = {
   params: Promise<{ contentType: string }>;

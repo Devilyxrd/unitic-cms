@@ -21,7 +21,7 @@ import { SetUserActiveDto } from './dto/set-user-active.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
-@ApiTags('Kullanicilar')
+@ApiTags('Kullanıcılar')
 @ApiBearerAuth('bearer')
 @Controller('users')
 @Roles(Role.ADMIN)
@@ -30,55 +30,55 @@ export class UsersController {
 
   @Get()
   @ApiOperation({
-    summary: 'Kullanicilari listele',
-    description: 'Sistemdeki kullanicilari olusturma tarihine gore listeler.',
+    summary: 'Kullanıcıları listele',
+    description: 'Sistemdeki kullanıcıları oluşturma tarihine göre listeler.',
   })
-  @ApiOkResponse({ description: 'Kullanici listesi donduruldu.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiOkResponse({ description: 'Kullanıcı listesi döndürüldü.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   list() {
     return this.usersService.list();
   }
 
   @Post()
   @ApiOperation({
-    summary: 'Yeni kullanici olustur',
-    description: 'Yeni bir ADMIN veya EDITOR kullanicisi olusturur.',
+    summary: 'Yeni kullanıcı oluştur',
+    description: 'Yeni bir ADMIN, EDITOR veya USER kullanıcısı oluşturur.',
   })
-  @ApiOkResponse({ description: 'Kullanici basariyla olusturuldu.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiOkResponse({ description: 'Kullanıcı başarıyla oluşturuldu.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   create(@Body() body: CreateUserDto) {
     return this.usersService.create(body);
   }
 
   @Patch(':id/active')
   @ApiOperation({
-    summary: 'Kullanici aktiflik durumunu guncelle',
-    description: 'Kullaniciyi aktif veya pasif duruma getirir.',
+    summary: 'Kullanıcı aktiflik durumunu güncelle',
+    description: 'Kullanıcıyı aktif veya pasif duruma getirir.',
   })
-  @ApiOkResponse({ description: 'Kullanici durumu guncellendi.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiOkResponse({ description: 'Kullanıcı durumu güncellendi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   setActive(@Param('id') id: string, @Body() body: SetUserActiveDto) {
     return this.usersService.setActive(id, body.active);
   }
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Kullanici bilgilerini guncelle',
-    description: 'E-posta, kullanici adi, sifre veya rol bilgisini gunceller.',
+    summary: 'Kullanıcı bilgilerini güncelle',
+    description: 'E-posta, kullanıcı adı, şifre veya rol bilgisini günceller.',
   })
-  @ApiOkResponse({ description: 'Kullanici guncellendi.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiOkResponse({ description: 'Kullanıcı güncellendi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.usersService.update(id, body);
   }
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Kullaniciyi sil',
-    description: 'Belirtilen kullaniciyi kalici olarak siler.',
+    summary: 'Kullanıcıyı sil',
+    description: 'Belirtilen kullanıcıyı kalıcı olarak siler.',
   })
-  @ApiOkResponse({ description: 'Kullanici silindi.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erisebilir.' })
+  @ApiOkResponse({ description: 'Kullanıcı silindi.' })
+  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

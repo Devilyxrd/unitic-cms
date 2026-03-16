@@ -26,11 +26,18 @@ export class AuthService {
           email: payload.email,
           username: payload.username,
           password: passwordHash,
-          role: Role.EDITOR,
+          role: Role.USER,
         },
       });
 
-      return this.issueSession(user.id, user.email, user.username, user.role);
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+        },
+      };
     } catch (error) {
       if (this.isPrismaKnownError(error, 'P2002')) {
         throw new ConflictException(
@@ -60,6 +67,12 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Kullanıcı hesabı pasif durumda.');
+    }
+
+    if (user.role === Role.USER) {
+      throw new UnauthorizedException(
+        'Bu panel yalnızca admin ve editör kullanıcıları içindir.',
+      );
     }
 
     const passwordOk = await compare(password, user.password);

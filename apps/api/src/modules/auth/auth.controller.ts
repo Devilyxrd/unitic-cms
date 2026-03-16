@@ -14,7 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 
-@ApiTags('Kimlik Dogrulama')
+@ApiTags('Kimlik Doğrulama')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -32,31 +32,35 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({
-    summary: 'Kullanici kaydi',
+    summary: 'Kullanıcı kaydı',
     description:
-      'Yeni bir EDITOR kullanicisi olusturur, HttpOnly oturum cerezini yazar.',
+      'Yeni bir USER kullanıcısı oluşturur. Admin paneli girişi için rol ataması gerekir.',
   })
-  @ApiOkResponse({ description: 'Kayit ve oturum acma basarili.' })
-  async register(@Body() body: RegisterDto, @Res({ passthrough: true }) res: Response) {
+  @ApiOkResponse({ description: 'Kayıt başarılı.' })
+  async register(@Body() body: RegisterDto) {
     const result = await this.authService.register(body);
-
-    res.cookie('admin_token', result.token, this.getCookieOptions());
 
     return {
       ok: true,
       user: result.user,
+      message:
+        'Kayıt oluşturuldu. Admin paneline erişim için rol ataması gerekir.',
     };
   }
 
   @Public()
   @Post('login')
   @ApiOperation({
-    summary: 'Kullanici girisi',
-    description: 'E-posta ve sifre ile giris yapar, HttpOnly oturum cerezini yazar.',
+    summary: 'Kullanıcı girişi',
+    description:
+      'E-posta ve şifre ile giriş yapar, HttpOnly oturum çerezini yazar.',
   })
-  @ApiOkResponse({ description: 'Giris basarili.' })
-  @ApiUnauthorizedResponse({ description: 'E-posta veya sifre hatali.' })
-  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+  @ApiOkResponse({ description: 'Giriş başarılı.' })
+  @ApiUnauthorizedResponse({ description: 'E-posta veya şifre hatalı.' })
+  async login(
+    @Body() body: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.login(body.email, body.password);
 
     res.cookie('admin_token', result.token, this.getCookieOptions());
@@ -70,10 +74,10 @@ export class AuthController {
   @Public()
   @Post('logout')
   @ApiOperation({
-    summary: 'Kullanici cikisi',
-    description: 'HttpOnly oturum cerezini temizler.',
+    summary: 'Kullanıcı çıkışı',
+    description: 'HttpOnly oturum çerezini temizler.',
   })
-  @ApiOkResponse({ description: 'Cikis basarili.' })
+  @ApiOkResponse({ description: 'Çıkış başarılı.' })
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('admin_token', this.getCookieOptions());
     return { ok: true };
@@ -82,11 +86,11 @@ export class AuthController {
   @Get('me')
   @ApiBearerAuth('bearer')
   @ApiOperation({
-    summary: 'Aktif kullanici bilgisi',
-    description: 'JWT token ile giris yapan kullanicinin profilini getirir.',
+    summary: 'Aktif kullanıcı bilgisi',
+    description: 'JWT token ile giriş yapan kullanıcının profilini getirir.',
   })
-  @ApiOkResponse({ description: 'Kullanici bilgisi donduruldu.' })
-  @ApiUnauthorizedResponse({ description: 'Token gecersiz veya sure dolmus.' })
+  @ApiOkResponse({ description: 'Kullanıcı bilgisi döndürüldü.' })
+  @ApiUnauthorizedResponse({ description: 'Token geçersiz veya süre dolmuş.' })
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
   }

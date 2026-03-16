@@ -1,4 +1,4 @@
-import { EntryDetailClient } from "@/features/entries/components/entry-detail-client";
+import { EntryDetailClient } from "@/features/entries/components/entryDetailClient";
 
 type EntryDetailPageProps = {
   params: Promise<{ contentType: string; entryId: string }>;

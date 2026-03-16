@@ -21,6 +21,12 @@ export function RegisterForm() {
     event.preventDefault();
     setError(null);
 
+    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
+    if (password.length < 8 || !strongPassword.test(password)) {
+      setError("Şifre en az 8 karakter olmalı; 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter içermelidir.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Şifreler eşleşmiyor.");
       return;
@@ -35,7 +41,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push(ROUTES.dashboard);
+      router.push(`${ROUTES.login}?registered=1`);
     } finally {
       setLoading(false);
     }
@@ -92,6 +98,9 @@ export function RegisterForm() {
           placeholder="••••••"
           required
         />
+        <p className="text-xs text-slate-400">
+          En az 8 karakter, 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter içermelidir.
+        </p>
       </div>
 
       <div className="space-y-1">
