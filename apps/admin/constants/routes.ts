@@ -1,5 +1,6 @@
 export const ROUTES = {
   login: "/login",
+  register: "/register",
   dashboard: "/dashboard",
   contentTypes: "/content-types",
   media: "/media",
@@ -15,7 +16,7 @@ export const NAV_ITEMS = [
 
 export const AUTH_COOKIE_NAME = "admin_token";
 
-export const PUBLIC_ROUTES = [ROUTES.login] as const;
+export const PUBLIC_ROUTES = [ROUTES.login, ROUTES.register] as const;
 
 export const PROTECTED_ROUTE_PREFIXES = [
   ROUTES.dashboard,
