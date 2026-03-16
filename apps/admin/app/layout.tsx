@@ -10,8 +10,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Unitic CMS Admin",
-  description: "Admin panel for Unitic CMS",
+  title: "Unitic CMS Yönetim",
+  description: "Unitic CMS için yönetim paneli",
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="tr">
       <body className={`${spaceGrotesk.variable} antialiased`}>
         <AdminShell>{children}</AdminShell>
       </body>

@@ -22,14 +22,15 @@ export function LoginForm() {
     }
 
     document.cookie = `${AUTH_COOKIE_NAME}=${response.token}; path=/; max-age=86400; samesite=lax`;
-    router.push(ROUTES.dashboard);
+    const nextPath = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
+    router.push(nextPath && nextPath.startsWith("/") ? nextPath : ROUTES.dashboard);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         <label htmlFor="email" className="block text-sm font-medium text-slate-400">
-          Email
+          E-posta
         </label>
         <input
           className="h-10 w-full rounded-xl border border-(--line) bg-(--surface-muted) px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-(--brand) focus:ring-1 focus:ring-(--brand)"
@@ -46,7 +47,7 @@ export function LoginForm() {
 
       <div className="space-y-1">
         <label htmlFor="password" className="block text-sm font-medium text-slate-400">
-          Password
+          Şifre
         </label>
         <input
           className="h-10 w-full rounded-xl border border-(--line) bg-(--surface-muted) px-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-(--brand) focus:ring-1 focus:ring-(--brand)"
@@ -68,7 +69,7 @@ export function LoginForm() {
         disabled={loading}
         className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-(--brand) px-4 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Signing in..." : "Sign in"}
+        {loading ? "Giriş yapılıyor..." : "Giriş yap"}
       </button>
     </form>
   );

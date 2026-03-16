@@ -57,7 +57,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="ml-auto text-slate-400 hover:text-white md:hidden"
           type="button"
           onClick={onClose}
-          aria-label="Close menu"
+          aria-label="Menüyü kapat"
         >
           <X className="h-5 w-5" />
         </button>
@@ -70,18 +70,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Image
                 className="object-cover"
                 src="https://i.pinimg.com/736x/c2/7c/ee/c27cee67807985d5220478e495be5919.jpg"
-                alt="made by devilyxrd"
+                alt="Devilyxrd tarafından hazırlandı"
                 fill
                 sizes="36px"
               />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-100">Devilyxrd</p>
-              <p className="truncate text-xs text-slate-300">Founder & Admin</p>
+              <p className="truncate text-xs text-slate-300">Kurucu ve Yönetici</p>
             </div>
           </div>
 
-          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Admin Panel</p>
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Yönetim Paneli</p>
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = NAV_ICON_BY_HREF[item.href] ?? LayoutDashboard;
@@ -112,7 +112,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           className="ui-control flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-slate-100"
         >
           <Settings className="h-4 w-4" />
-          <span>Settings</span>
+          <span>Ayarlar</span>
         </Link>
 
         <button
@@ -121,7 +121,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          Logout
+          Çıkış yap
         </button>
       </div>
     </aside>

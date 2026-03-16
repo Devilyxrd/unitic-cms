@@ -28,7 +28,7 @@ export function AdminShell({ children }: AdminShellProps) {
         <button
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
           type="button"
-          aria-label="Close menu"
+          aria-label="Menüyü kapat"
           onClick={() => setIsSidebarOpen(false)}
         />
       ) : null}
