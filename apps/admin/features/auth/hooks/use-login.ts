@@ -16,7 +16,7 @@ export function useLogin() {
       const response = await login(payload);
 
       if (!response.ok) {
-        setError(response.message ?? "Login failed.");
+        setError(response.message ?? "Giriş başarısız.");
       }
 
       return response;

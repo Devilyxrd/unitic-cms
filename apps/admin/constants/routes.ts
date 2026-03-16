@@ -7,10 +7,10 @@ export const ROUTES = {
 } as const;
 
 export const NAV_ITEMS = [
-  { href: ROUTES.dashboard, label: "Dashboard" },
-  { href: ROUTES.contentTypes, label: "Content Types" },
-  { href: ROUTES.media, label: "Media" },
-  { href: ROUTES.users, label: "Users" },
+  { href: ROUTES.dashboard, label: "Kontrol Paneli" },
+  { href: ROUTES.contentTypes, label: "İçerik Tipleri" },
+  { href: ROUTES.media, label: "Medya" },
+  { href: ROUTES.users, label: "Kullanıcılar" },
 ] as const;
 
 export const AUTH_COOKIE_NAME = "admin_token";

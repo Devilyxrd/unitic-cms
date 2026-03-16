@@ -20,7 +20,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
   if (!payload.email || !payload.password) {
-    return { ok: false, message: "Email and password are required." };
+    return { ok: false, message: "E-posta ve şifre zorunludur." };
   }
 
   try {
@@ -34,16 +34,16 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
 
     const data = (await response.json().catch(() => ({}))) as LoginApiResponse;
     if (!response.ok) {
-      return { ok: false, message: data.message ?? "Login request failed." };
+      return { ok: false, message: data.message ?? "Giriş isteği başarısız oldu." };
     }
 
     const token = data.token ?? data.accessToken ?? data.jwt;
     if (!token) {
-      return { ok: false, message: "No token was returned by the API." };
+      return { ok: false, message: "API tarafından token döndürülmedi." };
     }
 
     return { ok: true, token };
   } catch {
-    return { ok: false, message: "Cannot reach auth service." };
+    return { ok: false, message: "Kimlik doğrulama servisine ulaşılamıyor." };
   }
 }
