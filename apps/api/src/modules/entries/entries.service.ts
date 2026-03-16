@@ -1,10 +1,11 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EntryStatus, FieldType, Prisma } from '@prisma/client';
+import { EntryStatus, FieldType, Prisma, Role } from '@prisma/client';
 import { AuthUser } from '../../common/types/auth-user';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEntryDto } from './dto/create-entry.dto';
@@ -14,10 +15,15 @@ import { UpdateEntryDto } from './dto/update-entry.dto';
 export class EntriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(contentTypeSlug?: string, status?: EntryStatus) {
+  private isEditorOwner(entry: { authorId: string | null }, actor: AuthUser): boolean {
+    return actor.role === 'ADMIN' || entry.authorId === actor.id;
+  }
+
+  async list(contentTypeSlug?: string, status?: EntryStatus, actor?: AuthUser) {
     const where: Prisma.EntryWhereInput = {
       ...(contentTypeSlug ? { contentType: { slug: contentTypeSlug } } : {}),
       ...(status ? { status } : {}),
+      ...(actor && actor.role !== 'ADMIN' ? { authorId: actor.id } : {}),
     };
 
     const entries = await this.prisma.entry.findMany({
@@ -31,7 +37,7 @@ export class EntriesService {
     return { data: entries, total: entries.length };
   }
 
-  async getById(id: string) {
+  async getById(id: string, actor?: AuthUser) {
     const entry = await this.prisma.entry.findUnique({
       where: { id },
       include: {
@@ -41,6 +47,10 @@ export class EntriesService {
 
     if (!entry) {
       throw new NotFoundException('Kayıt bulunamadı.');
+    }
+
+    if (actor && !this.isEditorOwner(entry, actor)) {
+      throw new ForbiddenException('Bu kaydı görüntüleme yetkiniz yok.');
     }
 
     return entry;
@@ -100,7 +110,72 @@ export class EntriesService {
     }
   }
 
-  async updateStatus(id: string, status: EntryStatus) {
+  async update(id: string, payload: UpdateEntryDto, actor?: AuthUser) {
+    const entry = await this.prisma.entry.findUnique({
+      where: { id },
+      select: { authorId: true },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Kayıt bulunamadı.');
+    }
+
+    if (actor && !this.isEditorOwner(entry, actor)) {
+      throw new ForbiddenException('Bu kaydı düzenleme yetkiniz yok.');
+    }
+
+    const valuesPayload = (payload.values ?? []).map((value) => ({
+      fieldId: value.fieldId,
+      value: value.value as Prisma.InputJsonValue,
+      mediaId: value.mediaId ?? null,
+    }));
+
+    try {
+      return await this.prisma.entry.update({
+        where: { id },
+        data: {
+          ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
+          ...(payload.status !== undefined
+            ? {
+                status: payload.status,
+                publishedAt:
+                  payload.status === EntryStatus.PUBLISHED ? new Date() : null,
+              }
+            : {}),
+          values: {
+            deleteMany: {},
+            create: valuesPayload,
+          },
+        },
+        include: {
+          values: true,
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Bu slug ile bir kayıt zaten mevcut.');
+      }
+      throw error;
+    }
+  }
+
+  async updateStatus(id: string, status: EntryStatus, actor?: AuthUser) {
+    const entry = await this.prisma.entry.findUnique({
+      where: { id },
+      select: { authorId: true },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Kayıt bulunamadı.');
+    }
+
+    if (actor && !this.isEditorOwner(entry, actor)) {
+      throw new ForbiddenException('Bu kaydın durumunu değiştirme yetkiniz yok.');
+    }
+
     try {
       return await this.prisma.entry.update({
         where: { id },
@@ -117,84 +192,26 @@ export class EntriesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException('Kayıt bulunamadı.');
+        throw new NotFoundException('Kayıt bulunamadı.');;
       }
       throw error;
     }
   }
 
-  async update(id: string, payload: UpdateEntryDto) {
+  async remove(id: string, actor?: AuthUser) {
     const entry = await this.prisma.entry.findUnique({
       where: { id },
-      include: {
-        contentType: {
-          include: {
-            fields: {
-              orderBy: { order: 'asc' },
-            },
-          },
-        },
-      },
+      select: { authorId: true },
     });
 
     if (!entry) {
       throw new NotFoundException('Kayıt bulunamadı.');
     }
 
-    if (payload.values) {
-      this.validateEntryValues(entry.contentType.fields, payload.values);
+    if (actor && !this.isEditorOwner(entry, actor)) {
+      throw new ForbiddenException('Bu kaydı silme yetkiniz yok.');
     }
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const updatedEntry = await tx.entry.update({
-          where: { id },
-          data: {
-            ...(payload.slug !== undefined ? { slug: payload.slug } : {}),
-            ...(payload.status !== undefined
-              ? {
-                  status: payload.status,
-                  publishedAt:
-                    payload.status === EntryStatus.PUBLISHED ? new Date() : null,
-                }
-              : {}),
-          },
-        });
-
-        if (payload.values) {
-          await tx.entryValue.deleteMany({
-            where: { entryId: id },
-          });
-
-          if (payload.values.length > 0) {
-            await tx.entryValue.createMany({
-              data: payload.values.map((value) => ({
-                entryId: id,
-                fieldId: value.fieldId,
-                value: value.value as Prisma.InputJsonValue,
-                mediaId: value.mediaId ?? null,
-              })),
-            });
-          }
-        }
-
-        return tx.entry.findUnique({
-          where: { id: updatedEntry.id },
-          include: { values: true },
-        });
-      });
-    } catch (error: unknown) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException('Bu slug ile bir kayıt zaten mevcut.');
-      }
-      throw error;
-    }
-  }
-
-  async remove(id: string) {
     try {
       await this.prisma.entry.delete({
         where: { id },
