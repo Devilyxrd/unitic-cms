@@ -67,7 +67,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const visibleNavItems = useMemo(() => {
     if (currentUser?.role === "EDITOR") {
-      return NAV_ITEMS.filter((item) => item.href !== ROUTES.users);
+      return NAV_ITEMS.filter(
+        (item) => item.href !== ROUTES.users && item.href !== ROUTES.contentTypes,
+      );
     }
 
     return NAV_ITEMS;

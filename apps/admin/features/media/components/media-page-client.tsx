@@ -5,10 +5,11 @@ import { ChangeEvent, useEffect, useState } from "react";
 import { deleteMedia, listMedia, uploadMedia } from "@/features/media/api/media";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
 import { ToastStack } from "@/shared/components/toast-stack";
+import { apiClient } from "@/shared/lib/api-client";
 import { getAuthToken } from "@/shared/lib/auth-token";
 import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
 import { useToast } from "@/shared/hooks/use-toast";
-import type { MediaItem } from "@/types";
+import type { MediaItem, User } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -23,11 +24,25 @@ function resolveMediaUrl(url: string) {
 export function MediaPageClient() {
   const { toasts, dismissToast, showError, showSuccess } = useToast();
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        setCurrentUser(me);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+
+    void loadCurrentUser();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -134,16 +149,18 @@ export function MediaPageClient() {
               <a href={resolveMediaUrl(item.url)} target="_blank" rel="noreferrer" className="ui-control mt-3 inline-flex rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
                 Dosyayı aç
               </a>
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleDelete(item)}
-                  disabled={deletingId === item.id}
-                  className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
-                >
-                  {deletingId === item.id ? "Siliniyor..." : "Sil"}
-                </button>
-              </div>
+              {currentUser?.role === "ADMIN" ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(item)}
+                    disabled={deletingId === item.id}
+                    className="ui-control rounded-md border border-rose-500/35 px-2 py-1 text-xs text-rose-300 disabled:opacity-60"
+                  >
+                    {deletingId === item.id ? "Siliniyor..." : "Sil"}
+                  </button>
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

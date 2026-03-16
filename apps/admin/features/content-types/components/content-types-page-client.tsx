@@ -8,14 +8,17 @@ import { ROUTES } from "@/constants/routes";
 import { createContentType, deleteContentType, listContentTypes, updateContentType } from "@/features/content-types/api/content-types";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/state-blocks";
 import { ToastStack } from "@/shared/components/toast-stack";
+import { apiClient } from "@/shared/lib/api-client";
 import { getAuthToken } from "@/shared/lib/auth-token";
 import { confirmDestructiveAction } from "@/shared/lib/confirm-dialog";
 import { useToast } from "@/shared/hooks/use-toast";
-import type { ContentType } from "@/types";
+import type { ContentType, User } from "@/types";
 
 export function ContentTypesPageClient() {
   const { toasts, dismissToast, showError, showSuccess } = useToast();
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [items, setItems] = useState<ContentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +29,19 @@ export function ContentTypesPageClient() {
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        setCurrentUser(me);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    void loadCurrentUser();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -41,8 +57,19 @@ export function ContentTypesPageClient() {
   };
 
   useEffect(() => {
+    if (!authChecked) {
+      return;
+    }
+
+    if (currentUser?.role !== "ADMIN") {
+      setLoading(false);
+      setItems([]);
+      setError(null);
+      return;
+    }
+
     void load();
-  }, []);
+  }, [authChecked, currentUser?.role]);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -146,6 +173,18 @@ export function ContentTypesPageClient() {
       <h1 className="page-title">İçerik Tipleri</h1>
       <p className="page-subtitle">Sistemde kullanacağınız içerik yapılarını burada oluşturun.</p>
 
+      {!authChecked ? <LoadingBlock title="Yetki kontrolü yapılıyor..." /> : null}
+
+      {authChecked && currentUser?.role !== "ADMIN" ? (
+        <ErrorBlock
+          title="Yetkisiz işlem"
+          description="Content type builder sadece admin rolü için erişilebilir."
+        />
+      ) : null}
+
+      {authChecked && currentUser?.role !== "ADMIN" ? null : (
+        <>
+
       <form onSubmit={handleCreate} className="mt-4 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-3">
         <input
           className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
@@ -229,6 +268,8 @@ export function ContentTypesPageClient() {
           </table>
         </div>
       ) : null}
+        </>
+      )}
     </section>
   );
 }
