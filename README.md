@@ -81,6 +81,20 @@ Notlar:
 - API ayağa kalkınca Swagger arayüzü `/` yolunda servis edilir.
 - Admin ve Web uygulamaları `NEXT_PUBLIC_API_URL` üzerinden API’ye bağlanır.
 
+## AI Usage & Development Workflow
+
+Bu proje geliştirilirken agentic AI araçlarından aktif olarak yararlanılmıştır.  
+AI; yalnızca autocomplete amacıyla değil, mimari kararlar, dosya organizasyonu, API tasarımı, dynamic form yaklaşımı ve debug süreçlerinde kullanılmıştır.
+
+### Kullanım Alanları
+- Monorepo mimarisinin netleştirilmesi (`apps/api`, `apps/admin`, `apps/web`, `packages/database`)
+- Auth + role tabanlı erişim akışının iyileştirilmesi
+- Dynamic entry form yapısının kurgulanması
+- Media upload güvenlik kontrollerinin checklist’lenmesi
+- README’nin teknik kararlar perspektifinde güçlendirilmesi
+
+Detaylı AI çalışma notları için: **`WORKFLOW.md`**
+
 ## Veritabanı Modeli (Prisma)
 
 ### Temel Varlıklar
@@ -95,6 +109,13 @@ Notlar:
 - `Role`: `ADMIN`, `EDITOR`, `USER`
 - `EntryStatus`: `DRAFT`, `PUBLISHED`
 - `FieldType`: `TEXT`, `RICHTEXT`, `NUMBER`, `BOOLEAN`, `DATE`, `MEDIA`
+
+## Register ve Rol Atama Notu
+
+`/auth/register` endpoint’i yeni kullanıcıyı varsayılan olarak `USER` rolüyle oluşturur.  
+Admin panel (`/admin`) erişimi yalnızca `ADMIN` / `EDITOR` rollerine açıktır.
+
+Bu nedenle kayıt olan kullanıcıların panel erişimi için rol ataması gerekir (ör. seed veya admin müdahalesi ile).
 
 ## API (apps/api)
 
