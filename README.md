@@ -90,11 +90,13 @@ Bu akış en pratik geliştirme modelidir: backend servisleri konteynerde, front
    ```
   npm --workspace admin run dev
    ```
+  Port: `http://localhost:3002`
 
 4. **Web**
    ```
   npm --workspace web run dev
    ```
+  Port: `http://localhost:3001`
 
 ### Seçenek B - DB Docker, API lokal (backend debug ağırlıklı)
 
@@ -118,6 +120,7 @@ Bu akış en pratik geliştirme modelidir: backend servisleri konteynerde, front
   npm --workspace admin run dev
   npm --workspace web run dev
    ```
+  Admin: `http://localhost:3002` | Web: `http://localhost:3001`
 
 ### Seçenek C - Tam konteyner odaklı backend (production-like)
 
