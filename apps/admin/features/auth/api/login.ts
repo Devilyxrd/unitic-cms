@@ -10,10 +10,26 @@ export type LoginResponse = {
 
 type LoginApiResponse = {
   ok?: boolean;
-  message?: string;
+  message?: string | string[];
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
+function resolveLoginErrorMessage(status: number, message?: string | string[]) {
+  if (status === 401) {
+    return "E-posta veya şifre hatalı.";
+  }
+
+  if (status === 403) {
+    return "Bu panele erişim yetkiniz bulunmuyor.";
+  }
+
+  if (status === 400) {
+    return "Lütfen e-posta ve şifre alanlarını kontrol edin.";
+  }
+
+  return "Giriş şu anda tamamlanamıyor. Lütfen tekrar deneyin.";
+}
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
   if (!payload.email || !payload.password) {
@@ -32,7 +48,10 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
 
     const data = (await response.json().catch(() => ({}))) as LoginApiResponse;
     if (!response.ok) {
-      return { ok: false, message: data.message ?? "Giriş isteği başarısız oldu." };
+      return {
+        ok: false,
+        message: resolveLoginErrorMessage(response.status, data.message),
+      };
     }
 
     return { ok: data.ok ?? true };

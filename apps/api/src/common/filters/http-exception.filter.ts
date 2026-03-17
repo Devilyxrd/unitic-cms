@@ -38,10 +38,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    const errorMessage =
+      exception instanceof Error
+        ? exception.message
+        : typeof exception === 'string'
+          ? exception
+          : undefined;
+
+    if (exception instanceof Error) {
+      // Log full stack for unexpected errors to speed up debugging in dev.
+      // eslint-disable-next-line no-console
+      console.error(exception.stack ?? exception);
+    }
+
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Beklenmeyen bir sunucu hatası oluştu.',
+      message:
+        process.env.NODE_ENV === 'production'
+          ? 'Beklenmeyen bir sunucu hatası oluştu.'
+          : errorMessage ?? 'Beklenmeyen bir sunucu hatası oluştu.',
       path: request.url,
       timestamp: new Date().toISOString(),
     });

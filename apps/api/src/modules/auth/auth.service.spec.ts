@@ -1,4 +1,7 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
 import { AuthService } from './auth.service';
@@ -12,7 +15,7 @@ describe('AuthService', () => {
   const prismaMock = {
     user: {
       create: jest.fn(),
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
     },
   };
@@ -34,7 +37,7 @@ describe('AuthService', () => {
   });
 
   it('returns token and user for valid credentials', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    prismaMock.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'admin@unitic.dev',
       username: 'admin',
@@ -113,7 +116,7 @@ describe('AuthService', () => {
   });
 
   it('throws unauthorized for inactive user', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    prismaMock.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'admin@unitic.dev',
       username: 'admin',
@@ -130,7 +133,7 @@ describe('AuthService', () => {
   });
 
   it('throws unauthorized for USER role', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    prismaMock.user.findFirst.mockResolvedValue({
       id: 'user-3',
       email: 'user@unitic.dev',
       username: 'user',
@@ -149,7 +152,7 @@ describe('AuthService', () => {
   });
 
   it('throws unauthorized for wrong password', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    prismaMock.user.findFirst.mockResolvedValue({
       id: 'user-1',
       email: 'admin@unitic.dev',
       username: 'admin',

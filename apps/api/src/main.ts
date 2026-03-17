@@ -14,6 +14,7 @@ const envCandidates = [
   join(process.cwd(), '.env'),
   join(process.cwd(), 'apps', 'api', '.env'),
   join(process.cwd(), '..', '.env'),
+  join(process.cwd(), '..', '..', '.env'),
 ];
 
 for (const envPath of envCandidates) {

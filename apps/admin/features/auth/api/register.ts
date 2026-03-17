@@ -23,10 +23,26 @@ type RegisterApiResponse = {
     username: string;
     role: string;
   };
-  message?: string;
+  message?: string | string[];
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
+function resolveRegisterErrorMessage(status: number, message?: string | string[]) {
+  if (status === 403) {
+    return "Kayıt şu anda kapalı. Hesap oluşturmak için yöneticiyle iletişime geçin.";
+  }
+
+  if (status === 409) {
+    return "E-posta veya kullanıcı adı zaten kullanımda.";
+  }
+
+  if (status === 400) {
+    return "Lütfen form alanlarını kontrol edip tekrar deneyin.";
+  }
+
+  return "Kayıt şu anda tamamlanamıyor. Lütfen daha sonra tekrar deneyin.";
+}
 
 export async function register(payload: RegisterPayload): Promise<RegisterResponse> {
   if (!payload.email || !payload.username || !payload.password) {
@@ -57,7 +73,10 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
 
     const data = (await response.json().catch(() => ({}))) as RegisterApiResponse;
     if (!response.ok) {
-      return { ok: false, message: data.message ?? "Kayıt isteği başarısız oldu." };
+      return {
+        ok: false,
+        message: resolveRegisterErrorMessage(response.status, data.message),
+      };
     }
 
     return { ok: data.ok ?? true, user: data.user };

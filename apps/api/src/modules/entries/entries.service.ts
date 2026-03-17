@@ -75,6 +75,12 @@ export class EntriesService {
 
     this.validateEntryValues(contentType.fields, payload.values);
 
+    const inputSlug = payload.slug?.trim();
+    const autoSlugSource = this.findSlugSource(contentType.fields, payload.values);
+    const fallbackSlug = `${contentType.slug}-${Date.now()}`;
+    const baseSlug = this.toSlug(inputSlug || autoSlugSource || fallbackSlug);
+    const finalSlug = await this.ensureUniqueSlug(baseSlug || fallbackSlug);
+
     const valuesPayload = payload.values.map((value) => ({
       fieldId: value.fieldId,
       value: value.value as Prisma.InputJsonValue,
@@ -84,7 +90,7 @@ export class EntriesService {
     try {
       return await this.prisma.entry.create({
         data: {
-          slug: payload.slug,
+          slug: finalSlug,
           status: payload.status,
           publishedAt:
             payload.status === EntryStatus.PUBLISHED ? new Date() : null,
@@ -106,6 +112,96 @@ export class EntriesService {
         throw new ConflictException('Bu slug ile bir kayıt zaten mevcut.');
       }
       throw error;
+    }
+  }
+
+  private findSlugSource(
+    fields: Array<{
+      id: string;
+      type: FieldType;
+      required: boolean;
+      name: string;
+    }>,
+    values: CreateEntryDto['values'],
+  ): string | null {
+    const valueMap = new Map(values.map((item) => [item.fieldId, item.value]));
+
+    const titleLikeField = fields.find((field) => {
+      if (field.type !== FieldType.TEXT && field.type !== FieldType.RICHTEXT) {
+        return false;
+      }
+
+      const normalized = field.name.toLocaleLowerCase('tr-TR');
+      return normalized.includes('başlık') || normalized.includes('title');
+    });
+
+    if (titleLikeField) {
+      const titleValue = valueMap.get(titleLikeField.id);
+      if (typeof titleValue === 'string' && titleValue.trim()) {
+        return titleValue;
+      }
+    }
+
+    for (const field of fields) {
+      if (field.type !== FieldType.TEXT && field.type !== FieldType.RICHTEXT) {
+        continue;
+      }
+
+      const fieldValue = valueMap.get(field.id);
+      if (typeof fieldValue === 'string' && fieldValue.trim()) {
+        return fieldValue;
+      }
+    }
+
+    return null;
+  }
+
+  private toSlug(input: string): string {
+    const trMap: Record<string, string> = {
+      ç: 'c',
+      ğ: 'g',
+      ı: 'i',
+      ö: 'o',
+      ş: 's',
+      ü: 'u',
+      Ç: 'c',
+      Ğ: 'g',
+      İ: 'i',
+      I: 'i',
+      Ö: 'o',
+      Ş: 's',
+      Ü: 'u',
+    };
+
+    const normalized = input
+      .split('')
+      .map((char) => trMap[char] ?? char)
+      .join('')
+      .toLowerCase();
+
+    return normalized
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private async ensureUniqueSlug(baseSlug: string): Promise<string> {
+    let candidate = baseSlug;
+    let index = 2;
+
+    while (true) {
+      const existing = await this.prisma.entry.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        return candidate;
+      }
+
+      candidate = `${baseSlug}-${index}`;
+      index += 1;
     }
   }
 

@@ -43,6 +43,7 @@ export function ContentTypeDetailClient({ id }: Props) {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [contentType, setContentType] = useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,18 +64,22 @@ export function ContentTypeDetailClient({ id }: Props) {
   const [editFieldType, setEditFieldType] = useState<FieldType>("TEXT");
   const [editFieldRequired, setEditFieldRequired] = useState(false);
 
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        const me = await apiClient<User>("/auth/me", { method: "GET" });
-        setCurrentUser(me);
-      } finally {
-        setAuthChecked(true);
-      }
-    };
-
-    void loadCurrentUser();
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      const me = await apiClient<User>("/auth/me", { method: "GET" });
+      setCurrentUser(me);
+      setAuthError(null);
+    } catch (err) {
+      setCurrentUser(null);
+      setAuthError(err instanceof Error ? err.message : "Oturum bilgisi alınamadı.");
+    } finally {
+      setAuthChecked(true);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadCurrentUser();
+  }, [loadCurrentUser]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,7 +99,14 @@ export function ContentTypeDetailClient({ id }: Props) {
       return;
     }
 
-    if (currentUser?.role !== "ADMIN") {
+    if (authError) {
+      setLoading(false);
+      setContentType(null);
+      setError(null);
+      return;
+    }
+
+    if (currentUser?.role?.toUpperCase() !== "ADMIN") {
       setLoading(false);
       setContentType(null);
       setError(null);
@@ -102,7 +114,7 @@ export function ContentTypeDetailClient({ id }: Props) {
     }
 
     void load();
-  }, [authChecked, currentUser?.role, load]);
+  }, [authChecked, authError, currentUser?.role, load]);
 
   const handleFieldNameChange = (value: string) => {
     setFieldName(value);
@@ -245,11 +257,20 @@ export function ContentTypeDetailClient({ id }: Props) {
   };
 
   if (!authChecked) return <LoadingBlock title="Yetki kontrolü yapılıyor..." />;
-  if (authChecked && currentUser?.role !== "ADMIN") {
+  if (authChecked && authError) {
+    return (
+      <ErrorBlock
+        title="Oturum doğrulanamadı"
+        description={authError}
+        action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void loadCurrentUser()}>Tekrar dene</button>}
+      />
+    );
+  }
+  if (authChecked && currentUser?.role?.toUpperCase() !== "ADMIN") {
     return (
       <ErrorBlock
         title="Yetkisiz işlem"
-        description="İçerik tipi oluşturucu sadece admin rolü için erişilebilir."
+        description={`İçerik tipi oluşturucu sadece admin rolü için erişilebilir. Mevcut oturum rolü: ${currentUser?.role ?? "Bilinmiyor"}.`}
       />
     );
   }

@@ -60,7 +60,14 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = (email ?? '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new UnauthorizedException('E-posta veya şifre hatalı.');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+    });
     if (!user) {
       throw new UnauthorizedException('E-posta veya şifre hatalı.');
     }

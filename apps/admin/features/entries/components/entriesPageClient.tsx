@@ -191,7 +191,7 @@ export function EntriesPageClient({ contentType }: Props) {
       await createEntry(
         contentType,
         {
-          slug,
+          slug: slug.trim() || undefined,
           status,
           values,
         },
@@ -349,11 +349,11 @@ export function EntriesPageClient({ contentType }: Props) {
         <div className="space-y-1">
           <input
             className="ui-control h-10 w-full rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
-            placeholder="URL için kısa ad (isteğe bağlı)"
+            placeholder="URL için kısa ad (boşsa otomatik üretilir)"
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
           />
-          <p className="text-xs text-slate-400">Örnek: blog-yazisi-1. Boş bırakırsan kayıt ID&apos;siyle açılır.</p>
+          <p className="text-xs text-slate-400">Örnek: blog-yazisi-1. Boş bırakırsan sistem başlıktan otomatik slug üretir.</p>
         </div>
         <select
           className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none"

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Fragment, useEffect, useState } from "react";
+import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { ROUTES } from "@/constants/routes";
@@ -20,6 +20,7 @@ export function ContentTypesPageClient() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [items, setItems] = useState<ContentType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,18 +39,22 @@ export function ContentTypesPageClient() {
   const [editSlugEdited, setEditSlugEdited] = useState(false);
   const [editDescription, setEditDescription] = useState("");
 
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        const me = await apiClient<User>("/auth/me", { method: "GET" });
-        setCurrentUser(me);
-      } finally {
-        setAuthChecked(true);
-      }
-    };
-
-    void loadCurrentUser();
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      const me = await apiClient<User>("/auth/me", { method: "GET" });
+      setCurrentUser(me);
+      setAuthError(null);
+    } catch (err) {
+      setCurrentUser(null);
+      setAuthError(err instanceof Error ? err.message : "Oturum bilgisi alınamadı.");
+    } finally {
+      setAuthChecked(true);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadCurrentUser();
+  }, [loadCurrentUser]);
 
   const load = async () => {
     setLoading(true);
@@ -69,8 +74,15 @@ export function ContentTypesPageClient() {
       return;
     }
 
+    if (authError) {
+      setLoading(false);
+      return;
+    }
+
     void load();
-  }, [authChecked]);
+  }, [authChecked, authError]);
+
+  const isAdmin = currentUser?.role?.toUpperCase() === "ADMIN";
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -211,7 +223,19 @@ export function ContentTypesPageClient() {
 
       {!authChecked ? <LoadingBlock title="Yetki kontrolü yapılıyor..." /> : null}
 
-      {currentUser?.role === "ADMIN" ? (
+      {authChecked && authError ? (
+        <ErrorBlock
+          title="Oturum doğrulanamadı"
+          description={authError}
+          action={
+            <button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void loadCurrentUser()}>
+              Tekrar dene
+            </button>
+          }
+        />
+      ) : null}
+
+      {authChecked && !authError ? (isAdmin ? (
         <form onSubmit={handleCreate} className="mt-4 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-3">
           <input
             className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
@@ -258,9 +282,9 @@ export function ContentTypesPageClient() {
         </form>
       ) : (
         <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          İçerik tiplerini yalnızca admin düzenleyebilir. Buradan kayıt sayfalarına gidebilirsin.
+          İçerik tiplerini yalnızca admin düzenleyebilir. Mevcut oturum rolü: {currentUser?.role ?? "Bilinmiyor"}.
         </p>
-      )}
+      )) : null}
 
       {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} /> : null}
 
@@ -293,7 +317,7 @@ export function ContentTypesPageClient() {
                         <Link href={`/entries/${item.slug}`} className="ui-control rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
                           Kayıtlar
                         </Link>
-                        {currentUser?.role === "ADMIN" ? (
+                        {isAdmin ? (
                           <>
                             <Link href={`${ROUTES.contentTypes}/${item.id}`} className="ui-control rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
                               Alanlar

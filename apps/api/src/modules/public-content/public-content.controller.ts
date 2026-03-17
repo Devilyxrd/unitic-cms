@@ -9,6 +9,32 @@ import { PublicContentService } from './public-content.service';
 export class PublicContentController {
   constructor(private readonly publicContentService: PublicContentService) {}
 
+  @Get()
+  @ApiOperation({
+    summary: 'Yayınlanan içerik tiplerini listele',
+    description:
+      'En az bir yayınlanmış kaydı olan içerik tiplerini yayın sayılarıyla birlikte getirir.',
+  })
+  @ApiOkResponse({
+    description: 'Public içerik tipleri döndürüldü.',
+  })
+  listContentTypes() {
+    return this.publicContentService.listContentTypes();
+  }
+
+  @Get('all')
+  @ApiOperation({
+    summary: 'Tüm yayınlanmış içerikleri toplu getir',
+    description:
+      'Yayında olan tüm entry kayıtlarını içerik tiplerine gruplayarak tek response içinde döndürür.',
+  })
+  @ApiOkResponse({
+    description: 'Tüm yayınlanmış içerikler içerik tiplerine göre gruplanmış olarak döndürüldü.',
+  })
+  listAllPublished() {
+    return this.publicContentService.listAllPublished();
+  }
+
   @Get(':contentType')
   @ApiOperation({
     summary: 'Yayınlanmış içerikleri listele',
