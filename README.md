@@ -15,7 +15,7 @@ Amaç: içerik tiplerini (şemaları) tanımlamak, bu şemalara göre kayıt ür
 - **Admin (apps/admin)**: Yönetici ve editörlerin içerik tiplerini ve kayıtları yönetebildiği paneldir. API ile konuşur, HttpOnly cookie üzerinden oturum yönetir.
 - **Web (apps/web)**: Sadece yayınlanmış içerikleri gösteren public arayüzdür. Public API endpoint’lerinden veri çeker.
 - **Prisma (packages/database)**: PostgreSQL şemasını ve migration’ları yönetir. API, Prisma Client ile aynı şemayı kullanır.
-- **Docker**: PostgreSQL’i tek komutla ayağa kaldırmak için kullanılır.
+- **Docker**: PostgreSQL + API servislerini tek komutla ayağa kaldırmak için kullanılır.
 
 ## Monorepo Yapısı
 
@@ -23,7 +23,7 @@ Amaç: içerik tiplerini (şemaları) tanımlamak, bu şemalara göre kayıt ür
 - `apps/admin`: Admin panel (Next.js)
 - `apps/web`: Public site (Next.js)
 - `packages/database`: Prisma şeması ve migration’lar
-- `docker-compose.yml`: PostgreSQL konteyneri
+- `docker-compose.yml`: PostgreSQL + API konteynerleri
 - `.env` / `.env.example`: Ortam değişkenleri
 
 ## Ortam Değişkenleri (.env)
@@ -58,9 +58,9 @@ UPLOAD_DIR="C:\\path\\to\\unitic-cms\\apps\\api\\uploads"
 
 1. **PostgreSQL + API (Docker ile)**
    ```
-   docker compose up -d --build
+   npm run docker:start
    ```
-   Not: İlk seferde image build edilir. Sonraki çalıştırmalarda `docker compose up -d` yeterlidir.
+   Not: İlk seferde veya Dockerfile değiştiğinde `npm run docker:up` (build + up) kullan.
 
 2. **Prisma Migration ve Client**
    ```
@@ -91,6 +91,17 @@ UPLOAD_DIR="C:\\path\\to\\unitic-cms\\apps\\api\\uploads"
 Notlar:
 - API ayağa kalkınca Swagger arayüzü `/` yolunda servis edilir.
 - Admin ve Web uygulamaları `NEXT_PUBLIC_API_URL` üzerinden API’ye bağlanır.
+
+## Docker Komutları (root `package.json`)
+
+Bu komutlar **PostgreSQL + API** servislerini yönetir:
+
+- `npm run docker:up` → build + up
+- `npm run docker:start` → up (mevcut image ile)
+- `npm run docker:down` → down
+- `npm run docker:restart` → restart
+- `npm run docker:ps` → container list
+- `npm run docker:logs` → log takip
 
 ## AI Usage & Development Workflow
 

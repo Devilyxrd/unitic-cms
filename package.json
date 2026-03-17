@@ -6,7 +6,13 @@
     "packages/*"
   ],
   "scripts": {
-    "seed:demo": "node scripts/seed-demo.js"
+    "seed:demo": "node scripts/seed-demo.js",
+    "docker:up": "docker compose up -d --build",
+    "docker:start": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:restart": "docker compose restart",
+    "docker:ps": "docker compose ps",
+    "docker:logs": "docker compose logs -f"
   },
   "dependencies": {
     "@nestjs/jwt": "^11.0.2",
