@@ -82,6 +82,32 @@ export class MediaService {
     return generated;
   }
 
+  private normalizeFileBaseName(input: string): string {
+    const normalized = input
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    if (!normalized) {
+      return 'file';
+    }
+
+    return normalized.slice(0, 60).replace(/-+$/g, '') || 'file';
+  }
+
+  private buildStorageName(originalName: string, extension: string): string {
+    const nameWithoutExtension = originalName.substring(
+      0,
+      originalName.lastIndexOf('.'),
+    );
+    const baseName = this.normalizeFileBaseName(nameWithoutExtension);
+    const suffix = this.generateRandomName(8);
+
+    return `${baseName}-${suffix}${extension}`;
+  }
+
   async list() {
     const items = await this.prisma.media.findMany({
       orderBy: { createdAt: 'desc' },
@@ -147,7 +173,7 @@ export class MediaService {
 
     await mkdir(this.uploadDir, { recursive: true });
 
-    const storageName = `${this.generateRandomName()}${extension}`;
+    const storageName = this.buildStorageName(originalName, extension);
     const absolutePath = join(this.uploadDir, storageName);
 
     try {
