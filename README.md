@@ -117,6 +117,19 @@ Admin panel (`/admin`) erişimi yalnızca `ADMIN` / `EDITOR` rollerine açıktı
 
 Bu nedenle kayıt olan kullanıcıların panel erişimi için rol ataması gerekir (ör. seed veya admin müdahalesi ile).
 
+## Role Matrix (Yetki Tablosu)
+
+| Özellik | ADMIN | EDITOR | USER | Public |
+|---|---|---|---|---|
+| Admin panel login | ✅ | ✅ | ❌ | ❌ |
+| Content Type oluştur/güncelle/sil | ✅ | ❌ | ❌ | ❌ |
+| Entry oluştur/güncelle/sil | ✅ | ✅ | ❌ | ❌ |
+| Entry publish/unpublish | ✅ | ✅ | ❌ | ❌ |
+| Media upload/list | ✅ | ✅ | ❌ | ❌ |
+| Media delete | ✅ | ❌ | ❌ | ❌ |
+| User management | ✅ | ❌ | ❌ | ❌ |
+| Public içerik görüntüleme | ✅ | ✅ | ✅ | ✅ |
+
 ## API (apps/api)
 
 ### Kimlik Doğrulama ve Yetkilendirme
