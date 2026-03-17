@@ -41,7 +41,7 @@ AI’dan istenen:
 
 ---
 
-## 3) Örnek Prompt’lar (en az 5)
+## 3) Örnek Prompt’lar
 
 1. "NestJS + Prisma tabanlı bir headless CMS için monorepo klasör yapısını öner; api/admin/web/database ayrımını net ver."
 
@@ -57,7 +57,7 @@ AI’dan istenen:
 
 ---
 
-## 4) Debug Örneği (zorunlu)
+## 4) Debug Örneği
 
 ### Problem
 Login başarılı görünmesine rağmen bazı route geçişlerinde kullanıcı yetkili sayılmıyordu.
