@@ -1,11 +1,28 @@
 const path = require("path");
-const { PrismaClient, Role } = require("@prisma/client");
 const { hash } = require("bcryptjs");
 const dotenv = require("dotenv");
+const { PrismaPg } = require("@prisma/adapter-pg");
+
+let prismaRuntime;
+try {
+  prismaRuntime = require("@prisma/client");
+} catch {
+  // Workspace-hoisted client wrapper bazen .prisma yolunu cozemiyor.
+  prismaRuntime = require("../node_modules/.prisma/client/default");
+}
+
+const { PrismaClient, Role } = prismaRuntime;
 
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL ortam degiskeni zorunludur.");
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: databaseUrl }),
+});
 
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@unitic.dev";
 const adminUsername = process.env.SEED_ADMIN_USERNAME ?? "admin";

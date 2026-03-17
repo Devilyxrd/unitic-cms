@@ -6,6 +6,7 @@
   "scripts": {
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:status": "prisma migrate status",
     "prisma:studio": "prisma studio"
   },
@@ -14,11 +15,11 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.19.2"
+    "@prisma/client": "^7.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.15",
     "dotenv": "^17.2.3",
-    "prisma": "^6.19.2"
+    "prisma": "^7.5.0"
   }
 }

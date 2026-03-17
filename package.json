@@ -6,7 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "seed:demo": "node scripts/seed-demo.js",
+    "seed:demo": "npm --workspace database run prisma:generate && npm --workspace database run prisma:migrate:deploy && node scripts/seed-demo.js",
     "docker:up": "docker compose up -d --build",
     "docker:start": "docker compose up -d",
     "docker:down": "docker compose down",
