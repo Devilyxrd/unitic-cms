@@ -11,9 +11,11 @@ RUN npm install
 COPY . .
 
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+RUN npm --workspace api run build
+RUN mkdir -p /app/apps/api/uploads
 
 WORKDIR /app/apps/api
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]

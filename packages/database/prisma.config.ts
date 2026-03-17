@@ -6,10 +6,6 @@ import path from "path";
 
 dotenvConfig({ path: path.resolve(__dirname, "..", "..", ".env") });
 
-// Debug: ensure DATABASE_URL is loaded when running Prisma CLI.
-// eslint-disable-next-line no-console
-console.log("[prisma.config] DATABASE_URL:", process.env.DATABASE_URL);
-
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {

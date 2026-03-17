@@ -10,14 +10,9 @@
     "docker:up": "docker compose up -d --build",
     "docker:start": "docker compose up -d",
     "docker:down": "docker compose down",
+    "docker:clean": "docker compose down --volumes --remove-orphans --rmi local",
     "docker:restart": "docker compose restart",
     "docker:ps": "docker compose ps",
     "docker:logs": "docker compose logs -f"
-  },
-  "dependencies": {
-    "@nestjs/jwt": "^11.0.2",
-    "bcryptjs": "^3.0.3",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.15.1"
   }
 }

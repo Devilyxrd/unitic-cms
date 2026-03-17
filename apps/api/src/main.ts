@@ -3,26 +3,15 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { config as dotenvConfig } from 'dotenv';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 
-const envCandidates = [
-  join(process.cwd(), '.env'),
-  join(process.cwd(), 'apps', 'api', '.env'),
-  join(process.cwd(), '..', '.env'),
-  join(process.cwd(), '..', '..', '.env'),
-];
-
-for (const envPath of envCandidates) {
-  if (existsSync(envPath)) {
-    dotenvConfig({ path: envPath });
-    break;
-  }
-}
+const envPath =
+  process.env.APP_ENV_FILE ?? resolve(process.cwd(), '..', '..', '.env');
+dotenvConfig({ path: envPath });
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);

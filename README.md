@@ -28,13 +28,19 @@ Amaç: içerik tiplerini (şemaları) tanımlamak, bu şemalara göre kayıt ür
 
 ## Ortam Değişkenleri (.env)
 
-Root dizindeki `.env` dosyası hem API hem de Prisma tarafından okunur. `.env.example` üzerinden kopyalanabilir.
+Root dizindeki `.env` dosyası tüm uygulamalar için ana kaynaktır. `.env.example` üzerinden kopyalanabilir.
+
+- Next.js uygulamaları (`apps/admin`, `apps/web`) root `.env` dosyasını `next.config.ts` içinde yükler.
+- Prisma (`packages/database`) root `.env` dosyasını `prisma.config.ts` içinde yükler.
+- API (`apps/api`) varsayılan olarak root `.env` dosyasını kullanır.
+- İhtiyaç olursa API için `APP_ENV_FILE` ile farklı bir env dosyası verilebilir.
 
 - `PORT`: API portu (varsayılan 3000)
 - `JWT_SECRET`: JWT imzalama anahtarı
 - `DATABASE_URL`: PostgreSQL bağlantı adresi
 - `CORS_ORIGIN`: API için izin verilen origin’ler (virgülle ayrılmış)
 - `NEXT_PUBLIC_API_URL`: Admin ve Web uygulamalarının API adresi
+- `APP_ENV_FILE`: (Opsiyonel) API tarafında farklı env dosyası yolu (absolute path önerilir)
 - `POSTGRES_USER`: Docker Postgres kullanıcı adı
 - `POSTGRES_PASSWORD`: Docker Postgres şifresi
 - `POSTGRES_DB`: Docker Postgres veritabanı adı
@@ -48,49 +54,88 @@ JWT_SECRET="dev-secret"
 DATABASE_URL="postgresql://username:password@localhost:5432/cms"
 CORS_ORIGIN="http://localhost:3000,http://localhost:3001,http://localhost:3002"
 NEXT_PUBLIC_API_URL="http://localhost:3000"
+# APP_ENV_FILE="/absolute/path/to/.env"
 POSTGRES_USER=devilyxrd
 POSTGRES_PASSWORD="devilyxrdwashere123"
 POSTGRES_DB=cms
 UPLOAD_DIR="C:\\path\\to\\unitic-cms\\apps\\api\\uploads"
 ```
 
-## Çalıştırma Akışı
+### Env Yükleme Kaynakları (Kodda Nerede?)
+
+- `apps/admin/next.config.ts`
+- `apps/web/next.config.ts`
+- `packages/database/prisma.config.ts`
+- `apps/api/src/main.ts`
+
+## Sistemi Ayağa Kaldırma Seçenekleri
+
+### Seçenek A - Önerilen günlük akış (DB + API Docker, Admin/Web lokal)
+
+Bu akış en pratik geliştirme modelidir: backend servisleri konteynerde, frontendler hızlı local reload ile çalışır.
 
 1. **PostgreSQL + API (Docker ile)**
    ```
-   npm run docker:start
+  npm run docker:up
    ```
-   Not: İlk seferde veya Dockerfile değiştiğinde `npm run docker:up` (build + up) kullan.
+  Not: Sonraki açılışlarda `npm run docker:start` yeterlidir.
 
-2. **Prisma Migration ve Client**
+2. **Prisma migration/client**
    ```
-   cd packages/database
-   npm run prisma:generate
-   npm run prisma:migrate:dev
-   ```
-   Not: Migrationları host üzerinde çalıştırmak yeterli; DB Docker içinde olsa da `localhost:5432` üzerinden erişilebilir.
-
-3. **API (Docker dışında çalıştırmak istersen)**
-   ```
-   cd apps/api
-   npm run start:dev
+  npm --workspace database run prisma:generate
+  npm --workspace database run prisma:migrate:dev
    ```
 
-4. **Admin**
+3. **Admin**
    ```
-   cd apps/admin
-   npm run dev
+  npm --workspace admin run dev
    ```
 
-5. **Web**
+4. **Web**
    ```
-   cd apps/web
-   npm run dev
+  npm --workspace web run dev
    ```
+
+### Seçenek B - DB Docker, API lokal (backend debug ağırlıklı)
+
+`start:dev` ve debugger ihtiyacı varsa API'yi lokal çalıştırmak daha uygundur.
+
+1. DB'yi aç:
+  ```
+  docker compose up -d postgres
+  ```
+2. Prisma hazırlığı:
+  ```
+  npm --workspace database run prisma:generate
+  npm --workspace database run prisma:migrate:dev
+  ```
+3. API lokal:
+  ```
+  npm --workspace api run start:dev
+  ```
+4. Admin/Web lokal:
+   ```
+  npm --workspace admin run dev
+  npm --workspace web run dev
+   ```
+
+### Seçenek C - Tam konteyner odaklı backend (production-like)
+
+`docker-compose.yml` + `apps/api/Dockerfile` kombinasyonu API'yi `start:prod` (dist) ile çalıştırır.
+
+1. Build + up:
+  ```
+  npm run docker:up
+  ```
+2. Loglar:
+  ```
+  npm run docker:logs
+  ```
 
 Notlar:
 - API ayağa kalkınca Swagger arayüzü `/` yolunda servis edilir.
-- Admin ve Web uygulamaları `NEXT_PUBLIC_API_URL` üzerinden API’ye bağlanır.
+- Admin/Web uygulamaları `NEXT_PUBLIC_API_URL` üzerinden API'ye bağlanır.
+- Demo kullanıcı için root'ta `npm run seed:demo` kullanılabilir.
 
 ## Docker Komutları (root `package.json`)
 
@@ -99,9 +144,18 @@ Bu komutlar **PostgreSQL + API** servislerini yönetir:
 - `npm run docker:up` → build + up
 - `npm run docker:start` → up (mevcut image ile)
 - `npm run docker:down` → down
+- `npm run docker:clean` → projeye ait container + volume + local image temizliği (tam sıfırlama)
 - `npm run docker:restart` → restart
 - `npm run docker:ps` → container list
 - `npm run docker:logs` → log takip
+
+`docker:clean` notu: Postgres verisi ve upload volume dahil projeye ait Docker state silinir.
+
+### Docker Davranışı Kodda Nerede Tanımlı?
+
+- `docker-compose.yml`: servisler, environment, port/volume tanımları
+- `apps/api/Dockerfile`: API build ve runtime (start:prod)
+- `package.json`: root docker scriptleri
 
 ## AI Usage & Development Workflow
 
