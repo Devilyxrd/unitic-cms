@@ -412,4 +412,4 @@ Temel komutlar `packages/database` altında:
 
 ## İmza
 
-devilyxrd
+made by devilyxrd
