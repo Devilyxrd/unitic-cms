@@ -52,7 +52,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         }
       } catch (error) {
         if (error instanceof ApiClientError && error.status === 401) {
-          router.push(ROUTES.login);
+          await logout();
+          router.replace(ROUTES.login);
         }
       }
     };
