@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { ContentTypesModule } from './modules/content-types/content-types.module';
 import { EntriesModule } from './modules/entries/entries.module';
 import { MediaModule } from './modules/media/media.module';
@@ -20,7 +22,9 @@ import { PrismaModule } from './prisma/prisma.module';
     MediaModule,
     PublicContentModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

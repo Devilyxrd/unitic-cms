@@ -28,7 +28,7 @@ type RegisterApiResponse = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-function resolveRegisterErrorMessage(status: number, message?: string | string[]) {
+function resolveRegisterErrorMessage(status: number) {
   if (status === 403) {
     return "Kayıt şu anda kapalı. Hesap oluşturmak için yöneticiyle iletişime geçin.";
   }
@@ -75,7 +75,7 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
     if (!response.ok) {
       return {
         ok: false,
-        message: resolveRegisterErrorMessage(response.status, data.message),
+        message: resolveRegisterErrorMessage(response.status),
       };
     }
 

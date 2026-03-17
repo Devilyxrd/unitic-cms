@@ -24,10 +24,7 @@ export class PublicContentService {
           },
         },
       },
-      orderBy: [
-        { contentType: { slug: 'asc' } },
-        { publishedAt: 'desc' },
-      ],
+      orderBy: [{ contentType: { slug: 'asc' } }, { publishedAt: 'desc' }],
     });
 
     if (entries.length === 0) {

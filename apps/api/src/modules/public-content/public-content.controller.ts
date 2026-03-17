@@ -29,7 +29,8 @@ export class PublicContentController {
       'Yayında olan tüm entry kayıtlarını içerik tiplerine gruplayarak tek response içinde döndürür.',
   })
   @ApiOkResponse({
-    description: 'Tüm yayınlanmış içerikler içerik tiplerine göre gruplanmış olarak döndürüldü.',
+    description:
+      'Tüm yayınlanmış içerikler içerik tiplerine göre gruplanmış olarak döndürüldü.',
   })
   listAllPublished() {
     return this.publicContentService.listAllPublished();

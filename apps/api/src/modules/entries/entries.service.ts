@@ -76,7 +76,10 @@ export class EntriesService {
     this.validateEntryValues(contentType.fields, payload.values);
 
     const inputSlug = payload.slug?.trim();
-    const autoSlugSource = this.findSlugSource(contentType.fields, payload.values);
+    const autoSlugSource = this.findSlugSource(
+      contentType.fields,
+      payload.values,
+    );
     const fallbackSlug = `${contentType.slug}-${Date.now()}`;
     const baseSlug = this.toSlug(inputSlug || autoSlugSource || fallbackSlug);
     const finalSlug = await this.ensureUniqueSlug(baseSlug || fallbackSlug);

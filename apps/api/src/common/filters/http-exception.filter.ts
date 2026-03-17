@@ -47,7 +47,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof Error) {
       // Log full stack for unexpected errors to speed up debugging in dev.
-      // eslint-disable-next-line no-console
+
       console.error(exception.stack ?? exception);
     }
 
@@ -57,7 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message:
         process.env.NODE_ENV === 'production'
           ? 'Beklenmeyen bir sunucu hatası oluştu.'
-          : errorMessage ?? 'Beklenmeyen bir sunucu hatası oluştu.',
+          : (errorMessage ?? 'Beklenmeyen bir sunucu hatası oluştu.'),
       path: request.url,
       timestamp: new Date().toISOString(),
     });

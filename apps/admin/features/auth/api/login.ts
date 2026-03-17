@@ -15,7 +15,7 @@ type LoginApiResponse = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-function resolveLoginErrorMessage(status: number, message?: string | string[]) {
+function resolveLoginErrorMessage(status: number) {
   if (status === 401) {
     return "E-posta veya şifre hatalı.";
   }
@@ -50,7 +50,7 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
     if (!response.ok) {
       return {
         ok: false,
-        message: resolveLoginErrorMessage(response.status, data.message),
+        message: resolveLoginErrorMessage(response.status),
       };
     }
 
