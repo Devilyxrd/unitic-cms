@@ -26,6 +26,7 @@ for (const envPath of envCandidates) {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const uploadDir = process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads');
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') ?? [
@@ -74,7 +75,7 @@ async function bootstrap() {
     },
   });
 
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+  app.useStaticAssets(uploadDir, {
     prefix: '/uploads/',
   });
 

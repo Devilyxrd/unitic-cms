@@ -19,7 +19,8 @@ type UploadFile = {
 @Injectable()
 export class MediaService {
   private readonly maxFileSize = 10 * 1024 * 1024;
-  private readonly uploadDir = join(process.cwd(), 'uploads');
+  private readonly uploadDir =
+    process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads');
 
   private readonly allowedMimeTypes = new Set([
     'image/jpeg',

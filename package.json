@@ -5,6 +5,9 @@
     "apps/*",
     "packages/*"
   ],
+  "scripts": {
+    "seed:demo": "node scripts/seed-demo.js"
+  },
   "dependencies": {
     "@nestjs/jwt": "^11.0.2",
     "bcryptjs": "^3.0.3",

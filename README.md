@@ -35,6 +35,11 @@ Root dizindeki `.env` dosyası hem API hem de Prisma tarafından okunur. `.env.e
 - `DATABASE_URL`: PostgreSQL bağlantı adresi
 - `CORS_ORIGIN`: API için izin verilen origin’ler (virgülle ayrılmış)
 - `NEXT_PUBLIC_API_URL`: Admin ve Web uygulamalarının API adresi
+- `POSTGRES_USER`: Docker Postgres kullanıcı adı
+- `POSTGRES_PASSWORD`: Docker Postgres şifresi
+- `POSTGRES_DB`: Docker Postgres veritabanı adı
+- `UPLOAD_DIR`: (Opsiyonel) Medya upload dizini
+- `SEED_*`: (Opsiyonel) demo admin/editor seed bilgileri
 
 Örnek:
 ```
@@ -43,14 +48,19 @@ JWT_SECRET="dev-secret"
 DATABASE_URL="postgresql://username:password@localhost:5432/cms"
 CORS_ORIGIN="http://localhost:3000,http://localhost:3001,http://localhost:3002"
 NEXT_PUBLIC_API_URL="http://localhost:3000"
+POSTGRES_USER=devilyxrd
+POSTGRES_PASSWORD="devilyxrdwashere123"
+POSTGRES_DB=cms
+UPLOAD_DIR="C:\\path\\to\\unitic-cms\\apps\\api\\uploads"
 ```
 
 ## Çalıştırma Akışı
 
-1. **PostgreSQL (Docker ile)**
+1. **PostgreSQL + API (Docker ile)**
    ```
-   docker compose up -d
+   docker compose up -d --build
    ```
+   Not: İlk seferde image build edilir. Sonraki çalıştırmalarda `docker compose up -d` yeterlidir.
 
 2. **Prisma Migration ve Client**
    ```
@@ -58,8 +68,9 @@ NEXT_PUBLIC_API_URL="http://localhost:3000"
    npm run prisma:generate
    npm run prisma:migrate:dev
    ```
+   Not: Migrationları host üzerinde çalıştırmak yeterli; DB Docker içinde olsa da `localhost:5432` üzerinden erişilebilir.
 
-3. **API**
+3. **API (Docker dışında çalıştırmak istersen)**
    ```
    cd apps/api
    npm run start:dev
@@ -116,6 +127,26 @@ Detaylı AI çalışma notları için: **`WORKFLOW.md`**
 Admin panel (`/admin`) erişimi yalnızca `ADMIN` / `EDITOR` rollerine açıktır.
 
 Bu nedenle kayıt olan kullanıcıların panel erişimi için rol ataması gerekir (ör. seed veya admin müdahalesi ile).
+
+## Neden `USER` Rolü Var?
+
+Case içinde admin/editor ağırlığı olsa da `USER` rolünü **public web** tarafı için konumlandırdım:
+- `/auth/register` ile oluşan kullanıcılar admin paneline giremez (sadece public içerik tarafında kullanılabilir).
+- Böylece panel güvenliği bozulmadan, public taraf için gerçekçi bir kullanıcı tipi sağlanır.
+
+## Demo Kullanıcılar (Seed)
+
+Değerlendirici için hızlı giriş sağlamak adına demo admin/editor kullanıcıları seed ile eklenebilir:
+
+```
+npm run seed:demo
+```
+
+Demo hesaplar (varsayılan):
+- `admin@unitic.dev` / `Admin123!` (ADMIN)
+- `editor@unitic.dev` / `Editor123!` (EDITOR)
+
+> İstersen `.env` içindeki `SEED_*` değişkenleriyle bu bilgileri değiştirebilirsin.
 
 ## Role Matrix (Yetki Tablosu)
 
@@ -381,6 +412,10 @@ Notlar:
      { "success": true }
      ```
 
+**Upload kalıcılığı**
+- Varsayılan upload dizini: `apps/api/uploads` (değiştirilebilir: `UPLOAD_DIR`)
+- Docker ile çalıştırıldığında `uploads_data` volume bu dizine bağlıdır; konteyner yeniden başlasa da dosyalar korunur.
+
 ### Public İçerik (`/api/public`)
 
 Bu endpoint’ler public ve sadece `PUBLISHED` içerikleri döner.
@@ -412,6 +447,10 @@ Bu endpoint’ler public ve sadece `PUBLISHED` içerikleri döner.
 - `EDITOR`: İçerik ve medya yönetimi, kullanıcı yönetimi yok
 - `USER`: Admin paneline giriş yapamaz
 
+UI kanıtları:
+- Editor rolü `Kullanıcılar` menüsünü görmez ve kullanıcı yönetimi ekranına erişemez.
+- İçerik tipi oluşturma/düzenleme alanları admin rolü olmayan kullanıcılar için kapatılır ve uyarı mesajı gösterilir.
+
 Admin panel, `admin_token` cookie ile oturum doğrular. Next.js middleware ile korumalı sayfalar yönlendirilir.
 
 ## Web (apps/web)
@@ -439,10 +478,11 @@ Temel komutlar `packages/database` altında:
 
 ## Docker Bu Projede Ne İşe Yarıyor?
 
-`docker-compose.yml` ile PostgreSQL ayağa kaldırılır. Bu sayede:
+`docker-compose.yml` ile PostgreSQL ve API birlikte ayağa kaldırılır. Bu sayede:
 - Lokal DB kurulumuna gerek kalmaz
 - Tutarlı bir veritabanı ortamı sağlanır
-- API ve Prisma migration’ları hızlıca çalışır
+- API tek komutla çalıştırılabilir
+- `uploads_data` volume ile medya dosyaları kalıcı hale gelir
 
 ## İmza
 
