@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ScrollToContentLink } from "@/components/scrollToContentLink";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,12 +44,11 @@ export default function RootLayout({
                 >
                   Yayın Akışı
                 </Link>
-                <a
-                  href="#content-grid"
+                <ScrollToContentLink
                   className="rounded-full border border-transparent px-4 py-2 text-[0.84rem] font-semibold text-(--text-muted) transition hover:border-[rgba(85,104,146,0.3)] hover:bg-[rgba(37,48,76,0.56)] hover:text-(--text)"
                 >
                   İçerikler
-                </a>
+                </ScrollToContentLink>
                 <a
                   href={`${apiBase}/api/public/all`}
                   className="rounded-full border border-transparent px-4 py-2 text-[0.84rem] font-semibold text-(--text-muted) transition hover:border-[rgba(85,104,146,0.3)] hover:bg-[rgba(37,48,76,0.56)] hover:text-(--text)"
@@ -81,9 +81,9 @@ export default function RootLayout({
                   <Link className="font-medium hover:text-[#c6f7e1]" href="/">
                     Ana sayfa
                   </Link>
-                  <a className="font-medium hover:text-[#c6f7e1]" href="#content-grid">
+                  <ScrollToContentLink className="text-left font-medium hover:text-[#c6f7e1]">
                     İçerik listesi
-                  </a>
+                  </ScrollToContentLink>
                   <a href={`${apiBase}/api/public/all`} target="_blank" rel="noreferrer">
                     JSON çıktısı
                   </a>

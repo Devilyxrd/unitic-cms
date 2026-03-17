@@ -147,6 +147,13 @@ export function EntriesPageClient({ contentType }: Props) {
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (fields.length === 0) {
+      const message = "Bu içerik tipinde alan tanımı yok. Önce içerik tipine alan eklemelisin.";
+      setError(message);
+      showError("Kayıt oluşturulamadı", message);
+      return;
+    }
+
     const validationError = getValidationError();
     if (validationError) {
       showError("Kayıt oluşturulamadı", validationError);
@@ -368,7 +375,7 @@ export function EntriesPageClient({ contentType }: Props) {
         </select>
         <button
           type="submit"
-          disabled={creating || setupLoading}
+          disabled={creating || setupLoading || fields.length === 0}
           className="ui-control h-10 rounded-lg bg-(--brand) px-4 text-sm font-semibold text-white disabled:opacity-60"
         >
           {creating ? "Oluşturuluyor..." : "Kayıt Oluştur"}

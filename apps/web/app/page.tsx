@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HomeScrollController } from "@/components/homeScrollController";
 import { fetchPublicAllPublished, type PublicEntry } from "@/lib/publicApi";
 
 function getEntryTitle(entry: PublicEntry) {
@@ -47,6 +48,8 @@ export default async function HomePage() {
 
   return (
     <div className="page-shell">
+      <HomeScrollController />
+
       <header className="glass-card fade-up flex flex-col gap-7 p-7 md:p-10">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ROUTES } from "@/constants/routes";
 import { createContentType, deleteContentType, listContentTypes, updateContentType } from "@/features/contentTypes/api/contentTypes";
+import { listEntries } from "@/features/entries/api/entries";
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
@@ -13,7 +14,12 @@ import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { slugify } from "@/shared/utils/helpers";
-import type { ContentType, User } from "@/types";
+import type { ContentType, Entry, User } from "@/types";
+
+type ContentTypeEntriesSummary = {
+  total: number;
+  recent: Entry[];
+};
 
 export function ContentTypesPageClient() {
   const { toasts, dismissToast, showError, showSuccess } = useToast();
@@ -22,6 +28,7 @@ export function ContentTypesPageClient() {
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [items, setItems] = useState<ContentType[]>([]);
+  const [entriesByType, setEntriesByType] = useState<Record<string, ContentTypeEntriesSummary>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +69,21 @@ export function ContentTypesPageClient() {
     try {
       const data = await listContentTypes(getAuthToken());
       setItems(data);
+
+      const entrySummaries = await Promise.all(
+        data.map(async (contentType) => {
+          const entries = await listEntries({ contentTypeSlug: contentType.slug }, getAuthToken());
+          return [
+            contentType.id,
+            {
+              total: entries.length,
+              recent: entries.slice(0, 3),
+            } satisfies ContentTypeEntriesSummary,
+          ] as const;
+        }),
+      );
+
+      setEntriesByType(Object.fromEntries(entrySummaries));
     } catch (err) {
       setError(err instanceof Error ? err.message : "İçerik tipleri yüklenemedi.");
     } finally {
@@ -302,16 +324,40 @@ export function ContentTypesPageClient() {
                 <th className="px-4 py-3">Ad</th>
                 <th className="px-4 py-3">Slug</th>
                 <th className="px-4 py-3">Alanlar</th>
+                <th className="px-4 py-3">İçerikler</th>
                 <th className="px-4 py-3">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <Fragment key={item.id}>
+                  {(() => {
+                    const summary = entriesByType[item.id] ?? { total: 0, recent: [] };
+                    return (
                   <tr className="border-t border-(--line) text-slate-100">
                     <td className="px-4 py-3">{item.name}</td>
                     <td className="px-4 py-3 text-slate-300">{item.slug}</td>
                     <td className="px-4 py-3 text-slate-300">{item.fields?.length ?? 0}</td>
+                    <td className="px-4 py-3 text-slate-300">
+                      <div className="space-y-1">
+                        <p className="text-xs text-slate-400">Toplam kayıt: {summary.total}</p>
+                        {summary.recent.length > 0 ? (
+                          <div className="flex flex-col gap-1 text-xs">
+                            {summary.recent.map((entry) => (
+                              <Link
+                                key={entry.id}
+                                href={`/entries/${item.slug}/${entry.id}`}
+                                className="text-slate-200 hover:text-(--brand)"
+                              >
+                                {entry.slug || entry.id}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-500">Kayıt yok</p>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <Link href={`/entries/${item.slug}`} className="ui-control rounded-md border border-(--line) px-2 py-1 text-xs text-slate-200">
@@ -343,9 +389,11 @@ export function ContentTypesPageClient() {
                       </div>
                     </td>
                   </tr>
+                    );
+                  })()}
                   {editingId === item.id ? (
                     <tr className="border-t border-(--line) bg-(--surface)">
-                      <td colSpan={4} className="px-4 py-4">
+                      <td colSpan={5} className="px-4 py-4">
                         <form
                           className="grid gap-3 md:grid-cols-3"
                           onSubmit={(event) => {

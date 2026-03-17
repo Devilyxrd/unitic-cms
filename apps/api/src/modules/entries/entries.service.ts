@@ -73,6 +73,12 @@ export class EntriesService {
       throw new NotFoundException('İçerik tipi bulunamadı.');
     }
 
+    if (contentType.fields.length === 0) {
+      throw new BadRequestException(
+        'Bu içerik tipinde alan tanımı yok. Kayıt oluşturmak için önce alan ekleyin.',
+      );
+    }
+
     this.validateEntryValues(contentType.fields, payload.values);
 
     const inputSlug = payload.slug?.trim();

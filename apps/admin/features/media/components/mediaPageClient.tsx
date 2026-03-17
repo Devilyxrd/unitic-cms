@@ -2,7 +2,14 @@
 
 import { ChangeEvent, useEffect, useState } from "react";
 
-import { deleteMedia, listMedia, uploadMedia } from "@/features/media/api/media";
+import {
+  ALLOWED_MEDIA_MIME_TYPES,
+  deleteMedia,
+  listMedia,
+  MAX_MEDIA_FILE_SIZE,
+  uploadMedia,
+  validateMediaFile,
+} from "@/features/media/api/media";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
 import { apiClient } from "@/shared/lib/apiClient";
@@ -84,6 +91,14 @@ export function MediaPageClient() {
       return;
     }
 
+    const validationError = validateMediaFile(file);
+    if (validationError) {
+      setError(validationError);
+      showError("Geçersiz dosya", validationError);
+      event.target.value = "";
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
@@ -153,11 +168,16 @@ export function MediaPageClient() {
             <label className="text-sm font-medium text-slate-100">Dosya yükle</label>
             <input
               type="file"
+              accept={Array.from(ALLOWED_MEDIA_MIME_TYPES).join(",")}
               className="ui-control mt-2 block w-full rounded-lg border border-(--line) bg-(--surface) p-2 text-sm text-slate-300"
               onChange={(event) => void handleUpload(event)}
               disabled={uploading}
             />
-            <p className="mt-2 text-xs text-slate-400">{uploading ? "Yükleniyor..." : "Desteklenmeyen dosyalarda API hata döndürebilir."}</p>
+            <p className="mt-2 text-xs text-slate-400">
+              {uploading
+                ? "Yükleniyor..."
+                : `Maks ${Math.round(MAX_MEDIA_FILE_SIZE / (1024 * 1024))} MB. Dosyalar sunucuda rastgele harf-rakam adlarla kaydedilir.`}
+            </p>
           </div>
 
           {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} /> : null}

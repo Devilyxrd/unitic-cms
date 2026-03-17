@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { randomBytes } from 'crypto';
 import { mkdir, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -67,6 +67,19 @@ export class MediaService {
     return lastDotIndex > 0
       ? filename.substring(lastDotIndex).toLowerCase()
       : '';
+  }
+
+  private generateRandomName(length = 24): string {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = randomBytes(length);
+    let generated = '';
+
+    for (let i = 0; i < length; i += 1) {
+      generated += chars[bytes[i] % chars.length];
+    }
+
+    return generated;
   }
 
   async list() {
@@ -134,8 +147,8 @@ export class MediaService {
 
     await mkdir(this.uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}${extension}`;
-    const absolutePath = join(this.uploadDir, filename);
+    const storageName = `${this.generateRandomName()}${extension}`;
+    const absolutePath = join(this.uploadDir, storageName);
 
     try {
       await writeFile(absolutePath, file.buffer);
@@ -147,10 +160,10 @@ export class MediaService {
 
     return this.prisma.media.create({
       data: {
-        filename: originalName,
+        filename: storageName,
         mimeType: file.mimetype,
         size: file.size,
-        url: `/uploads/${filename}`,
+        url: `/uploads/${storageName}`,
       },
     });
   }

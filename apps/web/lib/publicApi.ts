@@ -69,21 +69,27 @@ export type PublicAllPublishedResponse = {
   totalEntries: number;
 };
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const PUBLIC_API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+// On Node runtime, localhost can be noticeably slower due to IPv6/IPv4 fallback.
+const FETCH_API_BASE =
+  typeof window === "undefined"
+    ? PUBLIC_API_BASE.replace("://localhost", "://127.0.0.1")
+    : PUBLIC_API_BASE;
 
 function resolveMediaUrls(entry: PublicEntry): PublicEntry {
   return {
     ...entry,
     values: entry.values.map((v) =>
       v.media && v.media.url.startsWith("/")
-        ? { ...v, media: { ...v.media, url: `${API_BASE}${v.media.url}` } }
+        ? { ...v, media: { ...v.media, url: `${PUBLIC_API_BASE}${v.media.url}` } }
         : v,
     ),
   };
 }
 
 export async function fetchPublicContentTypes() {
-  const response = await fetch(`${API_BASE}/api/public`, {
+  const response = await fetch(`${FETCH_API_BASE}/api/public`, {
     next: { revalidate: 60 },
   });
 
@@ -95,7 +101,7 @@ export async function fetchPublicContentTypes() {
 }
 
 export async function fetchPublicAllPublished() {
-  const response = await fetch(`${API_BASE}/api/public/all`, {
+  const response = await fetch(`${FETCH_API_BASE}/api/public/all`, {
     next: { revalidate: 60 },
   });
 
@@ -118,7 +124,7 @@ export async function fetchPublicAllPublished() {
 }
 
 export async function fetchPublicEntries(contentType: string) {
-  const response = await fetch(`${API_BASE}/api/public/${encodeURIComponent(contentType)}`, {
+  const response = await fetch(`${FETCH_API_BASE}/api/public/${encodeURIComponent(contentType)}`, {
     next: { revalidate: 60 },
   });
 
@@ -132,8 +138,8 @@ export async function fetchPublicEntries(contentType: string) {
 
 export async function fetchPublicEntry(contentType: string, slug: string) {
   const response = await fetch(
-    `${API_BASE}/api/public/${encodeURIComponent(contentType)}/${encodeURIComponent(slug)}`,
-    { cache: "no-store" },
+    `${FETCH_API_BASE}/api/public/${encodeURIComponent(contentType)}/${encodeURIComponent(slug)}`,
+    { next: { revalidate: 30 } },
   );
 
   if (response.status === 404) {
