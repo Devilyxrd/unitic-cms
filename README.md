@@ -472,7 +472,9 @@ Notlar:
 2. `POST /media`
    - `multipart/form-data`
    - `file` alanı ile dosya yüklenir.
-   - 10MB limit, izinli mime type kontrolü vardır.
+  - 10MB limit, izinli mime type kontrolü vardır.
+  - Sadece görsel dosyaları kabul edilir: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`.
+  - Video, ses, PDF ve doküman dosyaları reddedilir.
 
 3. `DELETE /media/:id` (ADMIN)
    - Response:
@@ -483,6 +485,7 @@ Notlar:
 **Upload kalıcılığı**
 - Varsayılan upload dizini: `apps/api/uploads` (değiştirilebilir: `UPLOAD_DIR`)
 - Docker ile çalıştırıldığında `uploads_data` volume bu dizine bağlıdır; konteyner yeniden başlasa da dosyalar korunur.
+- Dosya adı sunucu tarafında tamamen random üretilir (`media-<24-karakter-random>.<uzantı>`); orijinal dosya adı saklanmaz.
 
 ### Public İçerik (`/api/public`)
 
