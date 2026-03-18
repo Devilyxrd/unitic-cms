@@ -83,7 +83,7 @@ export function MediaPageClient() {
   }, [authChecked, currentUser]);
 
   const canUpload = currentUser?.role === "ADMIN" || currentUser?.role === "EDITOR";
-  const canDelete = currentUser?.role === "ADMIN";
+  const canDelete = currentUser?.role === "ADMIN" || currentUser?.role === "EDITOR";
 
   const handleUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

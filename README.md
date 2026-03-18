@@ -225,7 +225,7 @@ Demo hesaplar (varsayılan):
 | Entry oluştur/güncelle/sil | ✅ | ✅ | ❌ | ❌ |
 | Entry publish/unpublish | ✅ | ✅ | ❌ | ❌ |
 | Media upload/list | ✅ | ✅ | ❌ | ❌ |
-| Media delete | ✅ | ❌ | ❌ | ❌ |
+| Media delete | ✅ | ✅ | ❌ | ❌ |
 | User management | ✅ | ❌ | ❌ | ❌ |
 | Public içerik görüntüleme | ✅ | ✅ | ✅ | ✅ |
 
@@ -509,7 +509,7 @@ Bu endpoint’ler public ve sadece `PUBLISHED` içerikleri döner.
 - İçerik tipi oluşturma, düzenleme, silme
 - İçerik tipi alanları (field) ekleme, düzenleme, silme
 - Kayıt oluşturma, listeleme, filtreleme, güncelleme, silme
-- Medya yükleme, listeleme, silme (silme sadece ADMIN)
+- Medya yükleme, listeleme, silme
 - Kullanıcı yönetimi (sadece ADMIN)
 
 ### Erişim Kuralları

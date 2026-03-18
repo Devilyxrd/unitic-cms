@@ -82,13 +82,12 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
   @ApiOperation({
     summary: 'Medyayı sil',
     description: 'Belirtilen medya kaydını ve dosyasını siler.',
   })
   @ApiOkResponse({ description: 'Medya silindi.' })
-  @ApiForbiddenResponse({ description: 'Sadece ADMIN erişebilir.' })
+  @ApiForbiddenResponse({ description: 'Yalnızca ADMIN ve EDITOR erişebilir.' })
   remove(@Param('id') id: string) {
     return this.mediaService.remove(id);
   }
