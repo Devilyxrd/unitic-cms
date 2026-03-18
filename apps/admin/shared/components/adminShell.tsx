@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { ROUTES } from "../../constants/routes";
+import { logout } from "@/features/auth/api/login";
+import { apiClient } from "@/shared/lib/apiClient";
 import { Footer } from "./footer";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
@@ -15,11 +17,54 @@ type AdminShellProps = {
 
 export function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const isAuthPage = pathname === ROUTES.login || pathname === ROUTES.register;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verifySession = async () => {
+      if (isAuthPage) {
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+        return;
+      }
+
+      try {
+        await apiClient("/auth/me", { method: "GET" });
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+      } catch {
+        await logout();
+
+        if (!cancelled) {
+          const nextPath = pathname.startsWith("/") ? pathname : ROUTES.dashboard;
+          router.replace(`${ROUTES.login}?next=${encodeURIComponent(nextPath)}`);
+        }
+      }
+    };
+
+    void verifySession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthPage, pathname, router]);
 
   if (isAuthPage) {
     return <>{children}</>;
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-(--bg) px-4 text-slate-200">
+        <p className="text-sm">Oturum doğrulanıyor...</p>
+      </div>
+    );
   }
 
   return (
