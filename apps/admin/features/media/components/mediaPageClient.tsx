@@ -178,6 +178,11 @@ export function MediaPageClient() {
                 ? "Yükleniyor..."
                 : `Maks ${Math.round(MAX_MEDIA_FILE_SIZE / (1024 * 1024))} MB. Dosyalar sunucuda rastgele harf-rakam adlarla kaydedilir.`}
             </p>
+            {!uploading ? (
+              <p className="mt-1 text-xs text-amber-300">
+                Desteklenen dosyalar: JPG, PNG, GIF, WEBP, SVG. Video, ses, PDF ve doküman dosyaları yüklenemez.
+              </p>
+            ) : null}
           </div>
 
           {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void load()}>Tekrar dene</button>} /> : null}

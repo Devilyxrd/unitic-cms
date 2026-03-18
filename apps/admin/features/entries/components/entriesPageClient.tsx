@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
@@ -18,6 +18,25 @@ const STATUS_OPTIONS: EntryStatus[] = ["DRAFT", "PUBLISHED"];
 
 function statusLabel(status: EntryStatus) {
   return status === "PUBLISHED" ? "YAYINLANDI" : "TASLAK";
+}
+
+function fieldTypeLabel(field: ContentField) {
+  switch (field.type) {
+    case "TEXT":
+      return "Kısa Metin";
+    case "RICHTEXT":
+      return "Uzun Metin";
+    case "NUMBER":
+      return "Sayı";
+    case "BOOLEAN":
+      return "Doğru / Yanlış";
+    case "DATE":
+      return "Tarih";
+    case "MEDIA":
+      return "Medya";
+    default:
+      return field.type;
+  }
 }
 
 type Props = {
@@ -44,6 +63,11 @@ export function EntriesPageClient({ contentType }: Props) {
   const [fieldMediaIds, setFieldMediaIds] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+
+  const orderedFields = useMemo(
+    () => [...fields].sort((a, b) => a.order - b.order),
+    [fields],
+  );
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
@@ -116,7 +140,7 @@ export function EntriesPageClient({ contentType }: Props) {
   }, [fields]);
 
   const getValidationError = () => {
-    for (const field of fields) {
+    for (const field of orderedFields) {
       if (field.type === "MEDIA") {
         const mediaId = fieldMediaIds[field.id] ?? "";
         if (field.required && !mediaId) {
@@ -166,7 +190,7 @@ export function EntriesPageClient({ contentType }: Props) {
     try {
       const values: Array<{ fieldId: string; value?: unknown; mediaId?: string | null }> = [];
 
-      for (const field of fields) {
+      for (const field of orderedFields) {
         if (field.type === "MEDIA") {
           const mediaId = fieldMediaIds[field.id] ?? "";
           if (!mediaId && !field.required) {
@@ -249,9 +273,11 @@ export function EntriesPageClient({ contentType }: Props) {
   const renderFieldInput = (field: ContentField) => {
     if (field.type === "BOOLEAN") {
       return (
-        <label className="flex items-center gap-2 text-sm text-slate-100">
+        <label className="group inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-(--line) bg-(--surface) px-3 py-2.5 text-sm text-slate-100 transition hover:border-sky-400/40 hover:bg-slate-900/60">
+          <span className="text-slate-200">Seçim</span>
           <input
             type="checkbox"
+            className="h-4 w-4 accent-sky-500"
             checked={fieldBooleans[field.id] ?? false}
             onChange={(event) =>
               setFieldBooleans((prev) => ({
@@ -260,7 +286,6 @@ export function EntriesPageClient({ contentType }: Props) {
               }))
             }
           />
-          {field.required ? `${field.name} (zorunlu)` : field.name}
         </label>
       );
     }
@@ -268,7 +293,7 @@ export function EntriesPageClient({ contentType }: Props) {
     if (field.type === "MEDIA") {
       return (
         <select
-          className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none"
+          className="ui-control h-11 w-full rounded-xl border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20"
           value={fieldMediaIds[field.id] ?? ""}
           onChange={(event) =>
             setFieldMediaIds((prev) => ({
@@ -291,7 +316,7 @@ export function EntriesPageClient({ contentType }: Props) {
     if (field.type === "RICHTEXT") {
       return (
         <textarea
-          className="ui-control min-h-24 rounded-lg border border-(--line) bg-(--surface) px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+          className="ui-control min-h-28 w-full rounded-xl border border-(--line) bg-(--surface) px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20"
           placeholder={`${field.name}${field.required ? " (zorunlu)" : ""}`}
           value={fieldValues[field.id] ?? ""}
           onChange={(event) =>
@@ -307,7 +332,7 @@ export function EntriesPageClient({ contentType }: Props) {
 
     return (
       <input
-        className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+        className="ui-control h-11 w-full rounded-xl border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20"
         type={field.type === "NUMBER" ? "number" : field.type === "DATE" ? "date" : "text"}
         placeholder={`${field.name}${field.required ? " (zorunlu)" : ""}`}
         value={fieldValues[field.id] ?? ""}
@@ -352,53 +377,85 @@ export function EntriesPageClient({ contentType }: Props) {
         ))}
       </div>
 
-      <form onSubmit={handleCreate} className="mt-4 grid gap-3 rounded-xl border border-(--line) bg-(--surface-muted) p-4 md:grid-cols-3">
-        <div className="space-y-1">
-          <input
-            className="ui-control h-10 w-full rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
-            placeholder="URL için kısa ad (boşsa otomatik üretilir)"
-            value={slug}
-            onChange={(event) => setSlug(event.target.value)}
-          />
-          <p className="text-xs text-slate-400">Örnek: blog-yazisi-1. Boş bırakırsan sistem başlıktan otomatik slug üretir.</p>
-        </div>
-        <select
-          className="ui-control h-10 rounded-lg border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as EntryStatus)}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {statusLabel(option)}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          disabled={creating || setupLoading || fields.length === 0}
-          className="ui-control h-10 rounded-lg bg-(--brand) px-4 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {creating ? "Oluşturuluyor..." : "Kayıt Oluştur"}
-        </button>
-
-        {setupLoading ? <p className="md:col-span-3 text-sm text-slate-300">Form alanları hazırlanıyor...</p> : null}
-
-        {!setupLoading && fields.length === 0 ? (
-          <p className="md:col-span-3 text-sm text-amber-300">Bu içerik tipinde alan tanımı yok. Önce içerik tipine alan eklemelisin.</p>
-        ) : null}
-
-        {!setupLoading && fields.length > 0 ? (
-          <div className="md:col-span-3 grid gap-3 md:grid-cols-2">
-            {fields.map((field) => (
-              <div key={field.id} className="space-y-1">
-                <label className="block text-xs font-medium uppercase tracking-[0.06em] text-slate-400">
-                  {field.name} ({field.type})
-                </label>
-                {renderFieldInput(field)}
-              </div>
-            ))}
+      <form onSubmit={handleCreate} className="mt-4 space-y-4 rounded-2xl border border-(--line) bg-[linear-gradient(180deg,rgba(20,27,42,0.94),rgba(15,21,34,0.96))] p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">Yeni Kayıt</p>
+            <p className="mt-1 text-sm text-slate-300">Temel ayarları belirleyip alanları doldurarak kaydı oluştur.</p>
           </div>
-        ) : null}
+          <span className="rounded-full border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-[11px] font-semibold text-sky-200">
+            {orderedFields.length} alan
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="space-y-1.5 md:col-span-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">Slug</span>
+            <input
+              className="ui-control h-11 w-full rounded-xl border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20"
+              placeholder="URL için kısa ad (boşsa otomatik üretilir)"
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+            />
+            <p className="text-xs text-slate-400">Örnek: blog-yazisi-1. Boş bırakırsan sistem başlıktan otomatik slug üretir.</p>
+          </label>
+
+          <label className="space-y-1.5">
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">Durum</span>
+            <select
+              className="ui-control h-11 w-full rounded-xl border border-(--line) bg-(--surface) px-3 text-sm text-slate-100 outline-none focus:border-sky-400/60 focus:ring-2 focus:ring-sky-500/20"
+              value={status}
+              onChange={(event) => setStatus(event.target.value as EntryStatus)}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {statusLabel(option)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="rounded-xl border border-(--line) bg-(--surface-muted) p-3 md:p-4">
+          {setupLoading ? <p className="text-sm text-slate-300">Form alanları hazırlanıyor...</p> : null}
+
+          {!setupLoading && orderedFields.length === 0 ? (
+            <p className="text-sm text-amber-300">Bu içerik tipinde alan tanımı yok. Önce içerik tipine alan eklemelisin.</p>
+          ) : null}
+
+          {!setupLoading && orderedFields.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {orderedFields.map((field) => (
+                <div key={field.id} className="space-y-2 rounded-xl border border-(--line) bg-(--surface) p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">
+                      {field.name}
+                    </label>
+                    <span className="rounded-md border border-slate-700/70 bg-slate-900/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+                      {fieldTypeLabel(field)}
+                    </span>
+                  </div>
+
+                  {renderFieldInput(field)}
+
+                  <p className="text-[11px] text-slate-500">
+                    {field.required ? "Zorunlu alan" : "Opsiyonel alan"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-(--line) pt-3">
+          <button
+            type="submit"
+            disabled={creating || setupLoading || orderedFields.length === 0}
+            className="ui-control inline-flex h-11 items-center rounded-xl bg-(--brand) px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(19,91,236,0.33)] disabled:opacity-60"
+          >
+            {creating ? "Oluşturuluyor..." : "Kayıt Oluştur"}
+          </button>
+        </div>
       </form>
 
       {error ? <ErrorBlock title="İstek başarısız" description={error} action={<button className="ui-control rounded-md border border-(--line) px-3 py-1.5 text-xs text-slate-100" onClick={() => void loadEntries()}>Tekrar dene</button>} /> : null}

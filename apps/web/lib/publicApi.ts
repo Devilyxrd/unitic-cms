@@ -77,6 +77,10 @@ const FETCH_API_BASE =
     ? PUBLIC_API_BASE.replace("://localhost", "://127.0.0.1")
     : PUBLIC_API_BASE;
 
+const LIVE_FETCH_OPTIONS: RequestInit = {
+  cache: "no-store",
+};
+
 function resolveMediaUrls(entry: PublicEntry): PublicEntry {
   return {
     ...entry,
@@ -89,9 +93,7 @@ function resolveMediaUrls(entry: PublicEntry): PublicEntry {
 }
 
 export async function fetchPublicContentTypes() {
-  const response = await fetch(`${FETCH_API_BASE}/api/public`, {
-    next: { revalidate: 60 },
-  });
+  const response = await fetch(`${FETCH_API_BASE}/api/public`, LIVE_FETCH_OPTIONS);
 
   if (!response.ok) {
     return { data: [], total: 0 } satisfies PublicListResponse<PublicContentTypeSummary>;
@@ -101,9 +103,7 @@ export async function fetchPublicContentTypes() {
 }
 
 export async function fetchPublicAllPublished() {
-  const response = await fetch(`${FETCH_API_BASE}/api/public/all`, {
-    next: { revalidate: 60 },
-  });
+  const response = await fetch(`${FETCH_API_BASE}/api/public/all`, LIVE_FETCH_OPTIONS);
 
   if (!response.ok) {
     return {
@@ -124,9 +124,10 @@ export async function fetchPublicAllPublished() {
 }
 
 export async function fetchPublicEntries(contentType: string) {
-  const response = await fetch(`${FETCH_API_BASE}/api/public/${encodeURIComponent(contentType)}`, {
-    next: { revalidate: 60 },
-  });
+  const response = await fetch(
+    `${FETCH_API_BASE}/api/public/${encodeURIComponent(contentType)}`,
+    LIVE_FETCH_OPTIONS,
+  );
 
   if (!response.ok) {
     return { data: [], total: 0 } satisfies PublicListResponse<PublicEntry>;
@@ -139,7 +140,7 @@ export async function fetchPublicEntries(contentType: string) {
 export async function fetchPublicEntry(contentType: string, slug: string) {
   const response = await fetch(
     `${FETCH_API_BASE}/api/public/${encodeURIComponent(contentType)}/${encodeURIComponent(slug)}`,
-    { next: { revalidate: 30 } },
+    LIVE_FETCH_OPTIONS,
   );
 
   if (response.status === 404) {

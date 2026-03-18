@@ -9,18 +9,6 @@ export const ALLOWED_MEDIA_MIME_TYPES = new Set([
   "image/gif",
   "image/webp",
   "image/svg+xml",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "text/plain",
-  "text/csv",
-  "video/mp4",
-  "video/webm",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/webm",
 ]);
 
 export function validateMediaFile(file: File): string | null {
@@ -41,7 +29,7 @@ export function validateMediaFile(file: File): string | null {
   }
 
   if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
-    return "Bu dosya türü desteklenmiyor.";
+    return "Sadece görsel dosyaları yüklenebilir (JPG, PNG, GIF, WEBP, SVG).";
   }
 
   return null;

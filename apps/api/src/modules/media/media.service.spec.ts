@@ -26,7 +26,7 @@ describe('MediaService', () => {
     prismaMock.media.create.mockImplementation(({ data }) => data);
   });
 
-  it('saves uploads with sanitized file names for storage and db', async () => {
+  it('saves uploads with fully random file names for storage and db', async () => {
     const file = {
       originalname:
         'Çok ama çok uzun !!! saçma___dosya adı FINAL FINAL FINAL sürüm_2026_03_18.png',
@@ -39,24 +39,26 @@ describe('MediaService', () => {
     const savedName = result.filename as string;
 
     expect(savedName.endsWith('.png')).toBe(true);
-    expect(savedName).toMatch(/^[a-z0-9-]+-[A-Za-z0-9]{8}\.png$/);
+    expect(savedName).toMatch(/^media-[A-Za-z0-9]{24}\.png$/);
+    expect(savedName).not.toContain('cok');
+    expect(savedName).not.toContain('dosya');
     expect(savedName).not.toContain(' ');
     expect(savedName).not.toContain('_');
     expect(savedName.length).toBeLessThanOrEqual(80);
     expect(result.url).toBe(`/uploads/${savedName}`);
   });
 
-  it('falls back to a safe default base name when original base is empty', async () => {
+  it('keeps random naming even when original base is empty', async () => {
     const file = {
-      originalname: '!!!.pdf',
-      mimetype: 'application/pdf',
+      originalname: '!!!.png',
+      mimetype: 'image/png',
       size: 1024,
       buffer: Buffer.from('file-content'),
     };
 
     const result = await service.upload(file);
 
-    expect(result.filename).toMatch(/^file-[A-Za-z0-9]{8}\.pdf$/);
+    expect(result.filename).toMatch(/^media-[A-Za-z0-9]{24}\.png$/);
     expect(result.url).toBe(`/uploads/${result.filename}`);
   });
 });

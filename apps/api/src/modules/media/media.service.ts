@@ -28,18 +28,6 @@ export class MediaService {
     'image/gif',
     'image/webp',
     'image/svg+xml',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain',
-    'text/csv',
-    'video/mp4',
-    'video/webm',
-    'audio/mpeg',
-    'audio/wav',
-    'audio/webm',
   ]);
 
   private readonly dangerousExtensions = new Set([
@@ -82,30 +70,9 @@ export class MediaService {
     return generated;
   }
 
-  private normalizeFileBaseName(input: string): string {
-    const normalized = input
-      .normalize('NFKD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    if (!normalized) {
-      return 'file';
-    }
-
-    return normalized.slice(0, 60).replace(/-+$/g, '') || 'file';
-  }
-
-  private buildStorageName(originalName: string, extension: string): string {
-    const nameWithoutExtension = originalName.substring(
-      0,
-      originalName.lastIndexOf('.'),
-    );
-    const baseName = this.normalizeFileBaseName(nameWithoutExtension);
-    const suffix = this.generateRandomName(8);
-
-    return `${baseName}-${suffix}${extension}`;
+  private buildStorageName(extension: string): string {
+    const randomPart = this.generateRandomName(24);
+    return `media-${randomPart}${extension}`;
   }
 
   async list() {
@@ -139,7 +106,7 @@ export class MediaService {
 
     if (!this.allowedMimeTypes.has(file.mimetype)) {
       throw new BadRequestException(
-        `Dosya türü '${file.mimetype}' desteklenmiyor. İzin verilen türler: resimler, PDF, ofis dokümanları, ses/video dosyaları.`,
+        `Dosya türü '${file.mimetype}' desteklenmiyor. İzin verilen türler: JPG, PNG, GIF, WEBP, SVG.`,
       );
     }
 
@@ -173,7 +140,7 @@ export class MediaService {
 
     await mkdir(this.uploadDir, { recursive: true });
 
-    const storageName = this.buildStorageName(originalName, extension);
+    const storageName = this.buildStorageName(extension);
     const absolutePath = join(this.uploadDir, storageName);
 
     try {

@@ -44,7 +44,7 @@ export class MediaController {
   @ApiOperation({
     summary: 'Medya yükle',
     description:
-      'Tek bir dosyayı medya kütüphanesine yükler. Desteklenen türler: resimler (JPEG, PNG, GIF, WebP, SVG), PDF, ofis dokümanları (DOC, DOCX, XLS, XLSX), metin dosyaları, ses, video.',
+      'Tek bir dosyayı medya kütüphanesine yükler. Desteklenen türler: resimler (JPEG, PNG, GIF, WebP, SVG).',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

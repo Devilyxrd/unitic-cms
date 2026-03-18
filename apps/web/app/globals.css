@@ -144,6 +144,12 @@ a {
   border-radius: 14px;
 }
 
+.brand-logo {
+  font-family: var(--font-logo), "Sora", "Segoe UI", sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
 @keyframes fadeUp {
   to {
     opacity: 1;

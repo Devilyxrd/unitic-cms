@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Pacifico } from "next/font/google";
 import Link from "next/link";
 import { ScrollToContentLink } from "@/components/scrollToContentLink";
 import "./globals.css";
+
+const logoFont = Pacifico({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-logo",
+});
 
 export const metadata: Metadata = {
   title: "Unitic CMS",
@@ -17,11 +24,11 @@ export default function RootLayout({
 
   return (
     <html lang="tr">
-      <body className="antialiased">
+      <body className={`${logoFont.variable} antialiased`}>
         <div className="relative">
           <header className="relative z-40 px-4 pt-4 pb-1">
             <div className="mx-auto grid w-full max-w-290 grid-cols-1 items-center gap-4 rounded-[18px] border border-[rgba(85,104,146,0.24)] bg-[rgba(10,15,27,0.78)] px-4 py-3 shadow-[0_12px_34px_rgba(0,0,0,0.18)] backdrop-blur-[18px] md:grid-cols-[minmax(0,1fr)_auto]">
-              <Link href="/" className="inline-flex items-center gap-4" aria-label="Unitic CMS ana sayfa">
+              <Link href="/" className="inline-flex items-center gap-3" aria-label="Devilyxrd ana sayfa">
                 <span
                   className="inline-flex h-[2.4rem] w-[2.4rem] items-center justify-center rounded-[14px] border border-[rgba(92,116,171,0.32)] bg-[linear-gradient(145deg,rgba(56,189,248,0.14),rgba(34,197,94,0.12))]"
                   aria-hidden
@@ -29,8 +36,7 @@ export default function RootLayout({
                   <span className="h-[0.85rem] w-[0.85rem] rounded-full bg-[linear-gradient(135deg,#38bdf8,#22c55e)] shadow-[0_0_0_6px_rgba(56,189,248,0.1)]" />
                 </span>
                 <div>
-                  <p className="text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#8acfff]">Unitic CMS</p>
-                  <p className="text-base font-bold tracking-[-0.03em] text-(--text)">Public Content</p>
+                  <p className="brand-logo text-[1.34rem] text-[#d7ebff]">Devilyxrd</p>
                 </div>
               </Link>
 
