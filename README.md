@@ -1,560 +1,439 @@
 # Unitic CMS
 
-Bu repo, içerik yönetimi için üç ana uygulama ve bir ortak veritabanı paketi içerir:
+Unitic CMS, üç uygulama ve bir ortak veritabanı paketinden oluşan bir monorepo CMS projesidir:
 
-- `apps/api`: NestJS tabanlı CMS API
-- `apps/admin`: Next.js tabanlı yönetim paneli
-- `apps/web`: Next.js tabanlı public içerik sitesi
-- `packages/database`: Prisma şeması ve migration yönetimi
+- `apps/api`: Kimlik doğrulama, roller, içerik tipleri, kayıtlar, medya ve public içerik için NestJS API
+- `apps/admin`: İçerik ve kullanıcı yönetimi için Next.js admin paneli
+- `apps/web`: Yayınlanmış içerikleri gösteren Next.js public site
+- `packages/database`: Prisma şeması, migration'lar ve client üretimi
 
-Amaç: içerik tiplerini (şemaları) tanımlamak, bu şemalara göre kayıt üretmek, medya yüklemek ve yayınlanan içerikleri public olarak sunmaktır.
+Temel akış şudur: içerik tiplerini tanımla, alanları ekle, kayıtları oluştur, medyayı yükle, içerikleri yayınla ve public tarafta yayınlanmış verileri tüket.
 
-## Proje Mimarisi ve Çalışma Mantığı
+## Proje Yapısı
 
-- **API (apps/api)**: Tüm veri yönetimi burada yapılır. JWT tabanlı kimlik doğrulama, rol bazlı yetkilendirme, içerik tipleri/alanları, kayıtlar ve medya yönetimi bu serviste bulunur.
-- **Admin (apps/admin)**: Yönetici ve editörlerin içerik tiplerini ve kayıtları yönetebildiği paneldir. API ile konuşur, HttpOnly cookie üzerinden oturum yönetir.
-- **Web (apps/web)**: Sadece yayınlanmış içerikleri gösteren public arayüzdür. Public API endpoint’lerinden veri çeker.
-- **Prisma (packages/database)**: PostgreSQL şemasını ve migration’ları yönetir. API, Prisma Client ile aynı şemayı kullanır.
-- **Docker**: PostgreSQL + API servislerini tek komutla ayağa kaldırmak için kullanılır.
+```text
+unitic-cms/
+|- apps/
+|  |- api/      # NestJS backend
+|  |- admin/    # Next.js admin paneli
+|  \- web/      # Next.js public site
+|- packages/
+|  \- database/ # Prisma şeması ve migration'lar
+|- scripts/
+|  \- seed-demo.js
+|- docker-compose.yml
+|- package.json
+|- README.md
+```
 
-## Monorepo Yapısı
+## Mimari Genel Bakış
 
-- `apps/api`: NestJS API kaynağı
-- `apps/admin`: Admin panel (Next.js)
-- `apps/web`: Public site (Next.js)
-- `packages/database`: Prisma şeması ve migration’lar
-- `docker-compose.yml`: PostgreSQL + API konteynerleri
-- `.env` / `.env.example`: Ortam değişkenleri
+### API (`apps/api`)
 
-## Ortam Değişkenleri (.env)
+- NestJS kullanır
+- JWT tabanlı kimlik doğrulama ve rol bazlı yetkilendirme içerir
+- Kullanıcılar, içerik tipleri, kayıtlar ve medya için CRUD endpoint'leri sunar
+- Public içeriği `/api/public` altından servis eder
+- Swagger UI'ı API kök URL'inde yayınlar
+- Yüklenen dosyaları `/uploads/*` altından servis eder
 
-Root dizindeki `.env` dosyası tüm uygulamalar için ana kaynaktır. `.env.example` üzerinden kopyalanabilir.
+### Admin (`apps/admin`)
 
-- Next.js uygulamaları (`apps/admin`, `apps/web`) root `.env` dosyasını `next.config.ts` içinde yükler.
-- Prisma (`packages/database`) root `.env` dosyasını `prisma.config.ts` içinde yükler.
-- API (`apps/api`) varsayılan olarak root `.env` dosyasını kullanır.
-- İhtiyaç olursa API için `APP_ENV_FILE` ile farklı bir env dosyası verilebilir.
+- Next.js 16 kullanır
+- API'ye `NEXT_PUBLIC_API_URL` ile bağlanır
+- Route korumasını middleware ve `admin_token` cookie'si ile yapar
+- `ADMIN` ve `EDITOR` kullanıcılarının içerik yönetmesini sağlar
+- Kullanıcı yönetimi ve içerik tipi şema değişikliklerini `ADMIN` ile sınırlar
 
-- `PORT`: API portu (varsayılan 3000)
+### Web (`apps/web`)
+
+- Next.js 16 kullanır
+- Sadece yayınlanmış içerikleri `/api/public` üzerinden çeker
+- Ana sayfada tüm yayınlanmış içerikleri listeler
+- Detay sayfalarını `/:contentType/:slug` deseninde üretir
+
+### Database (`packages/database`)
+
+- PostgreSQL ile Prisma kullanır
+- Şemayı ve migration'ları `packages/database/prisma` altında tutar
+- API ve seed script'i tarafından kullanılan Prisma Client'ı üretir
+
+## Gerçek Çalışma Alanı Durumu
+
+Bu repoda şu anda şunlar vardır:
+
+- API container imajı için `apps/api/Dockerfile`
+- `postgres` ve `api` için `docker-compose.yml`
+- Demo admin/editor üretimi için `scripts/seed-demo.js`
+- AI destekli geliştirme notları için `WORKFLOW.md`
+
+Bu repoda şu anda şunlar yoktur:
+
+- commit edilmiş bir `.env`
+- `admin` için ayrı bir Docker servisi
+- `web` için ayrı bir Docker servisi
+
+## Gereksinimler
+
+- Node.js 20+
+- npm 10+
+- Docker Desktop (PostgreSQL ve API için önerilir)
+
+## Ortam Değişkenleri
+
+Önce örnek dosyayı kopyalayın:
+
+```bash
+copy .env.example .env
+```
+
+Ana değişkenler:
+
+- `PORT`: API portu. Varsayılan: `3000`
 - `JWT_SECRET`: JWT imzalama anahtarı
 - `DATABASE_URL`: PostgreSQL bağlantı adresi
-- `CORS_ORIGIN`: API için izin verilen origin’ler (virgülle ayrılmış)
-- `NEXT_PUBLIC_API_URL`: Admin ve Web uygulamalarının API adresi
-- `APP_ENV_FILE`: (Opsiyonel) API tarafında farklı env dosyası yolu (absolute path önerilir)
-- `POSTGRES_USER`: Docker Postgres kullanıcı adı
-- `POSTGRES_PASSWORD`: Docker Postgres şifresi
-- `POSTGRES_DB`: Docker Postgres veritabanı adı
-- `UPLOAD_DIR`: (Opsiyonel) Medya upload dizini
-- `SEED_*`: (Opsiyonel) demo admin/editor seed bilgileri
+- `CORS_ORIGIN`: API için izin verilen origin'ler, virgülle ayrılır
+- `NEXT_PUBLIC_API_URL`: `apps/admin` ve `apps/web` tarafından kullanılan API taban URL'i
+- `APP_ENV_FILE`: API için opsiyonel özel env dosyası yolu
+- `POSTGRES_USER`: Docker PostgreSQL kullanıcı adı
+- `POSTGRES_PASSWORD`: Docker PostgreSQL şifresi
+- `POSTGRES_DB`: Docker PostgreSQL veritabanı adı
+- `UPLOAD_DIR`: API için opsiyonel upload dizini
+- `SEED_ADMIN_EMAIL`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_PASSWORD`: opsiyonel demo admin seed değerleri
+- `SEED_EDITOR_EMAIL`, `SEED_EDITOR_USERNAME`, `SEED_EDITOR_PASSWORD`: opsiyonel demo editor seed değerleri
 
-Örnek:
+Kod tarafında env yükleme mantığı:
+
+- `apps/api/src/main.ts`, `APP_ENV_FILE` verilmemişse kökteki `.env` dosyasını yükler
+- `apps/admin/next.config.ts`, kökteki `.env` dosyasını yükler
+- `apps/web/next.config.ts`, kökteki `.env` dosyasını yükler
+- `packages/database/prisma.config.ts`, kökteki `.env` dosyasını yükler
+
+## Hızlı Başlangıç
+
+### 1. Bağımlılıkları kur
+
+```bash
+npm install
 ```
-PORT=3000
-JWT_SECRET="dev-secret"
-DATABASE_URL="postgresql://username:password@localhost:5432/cms"
-CORS_ORIGIN="http://localhost:3000,http://localhost:3001,http://localhost:3002"
-NEXT_PUBLIC_API_URL="http://localhost:3000"
-# APP_ENV_FILE="/absolute/path/to/.env"
-POSTGRES_USER=devilyxrd
-POSTGRES_PASSWORD="devilyxrdwashere123"
-POSTGRES_DB=cms
-UPLOAD_DIR="C:\\path\\to\\unitic-cms\\apps\\api\\uploads"
+
+### 2. `.env` dosyasını oluştur
+
+Kökteki örnek dosyayı kullan:
+
+```bash
+copy .env.example .env
 ```
 
-### Env Yükleme Kaynakları (Kodda Nerede?)
+### 3. PostgreSQL ve API'yi Docker ile başlat
 
-- `apps/admin/next.config.ts`
-- `apps/web/next.config.ts`
-- `packages/database/prisma.config.ts`
-- `apps/api/src/main.ts`
+```bash
+npm run docker:up
+```
 
-## Sistemi Ayağa Kaldırma Seçenekleri
+Sonraki açılışlarda:
 
-### Seçenek A - Önerilen günlük akış (DB + API Docker, Admin/Web lokal)
+```bash
+npm run docker:start
+```
 
-Bu akış en pratik geliştirme modelidir: backend servisleri konteynerde, frontendler hızlı local reload ile çalışır.
+### 4. Prisma Client üret ve migration'ları çalıştır
 
-1. **PostgreSQL + API (Docker ile)**
-   ```
-  npm run docker:up
-   ```
-  Not: Sonraki açılışlarda `npm run docker:start` yeterlidir.
+```bash
+npm --workspace database run prisma:generate
+npm --workspace database run prisma:migrate:dev
+```
 
-2. **Prisma migration/client**
-   ```
-  npm --workspace database run prisma:generate
-  npm --workspace database run prisma:migrate:dev
-   ```
+### 5. Frontend uygulamalarını lokal başlat
 
-3. **Admin**
-   ```
-  npm --workspace admin run dev
-   ```
-  Port: `http://localhost:3002`
+Admin paneli:
 
-4. **Web**
-   ```
-  npm --workspace web run dev
-   ```
-  Port: `http://localhost:3001`
+```bash
+npm --workspace admin run dev
+```
 
-### Seçenek B - DB Docker, API lokal (backend debug ağırlıklı)
+Public site:
 
-`start:dev` ve debugger ihtiyacı varsa API'yi lokal çalıştırmak daha uygundur.
+```bash
+npm --workspace web run dev
+```
 
-1. DB'yi aç:
-  ```
-  docker compose up -d postgres
-  ```
-2. Prisma hazırlığı:
-  ```
-  npm --workspace database run prisma:generate
-  npm --workspace database run prisma:migrate:dev
-  ```
-3. API lokal:
-  ```
-  npm --workspace api run start:dev
-  ```
-4. Admin/Web lokal:
-   ```
-  npm --workspace admin run dev
-  npm --workspace web run dev
-   ```
-  Admin: `http://localhost:3002` | Web: `http://localhost:3001`
+Varsayılan lokal adresler:
 
-### Seçenek C - Tam konteyner odaklı backend (production-like)
+- API: `http://localhost:3000`
+- Swagger UI: `http://localhost:3000/`
+- Admin: `http://localhost:3002`
+- Web: `http://localhost:3001`
 
-`docker-compose.yml` + `apps/api/Dockerfile` kombinasyonu API'yi `start:prod` (dist) ile çalıştırır.
+## Çalıştırma Modları
 
-1. Build + up:
-  ```
-  npm run docker:up
-  ```
-2. Loglar:
-  ```
-  npm run docker:logs
-  ```
+### Seçenek A: Günlük geliştirme için önerilen akış
 
-Notlar:
-- API ayağa kalkınca Swagger arayüzü `/` yolunda servis edilir.
-- Admin/Web uygulamaları `NEXT_PUBLIC_API_URL` üzerinden API'ye bağlanır.
-- Demo kullanıcı için root'ta `npm run seed:demo` kullanılabilir.
+`postgres` ve `api` için Docker kullanın; `admin` ve `web` uygulamalarını lokal çalıştırın.
 
-## Docker Komutları (root `package.json`)
+```bash
+npm run docker:up
+npm --workspace database run prisma:generate
+npm --workspace database run prisma:migrate:dev
+npm --workspace admin run dev
+npm --workspace web run dev
+```
 
-Bu komutlar **PostgreSQL + API** servislerini yönetir:
+### Seçenek B: Lokal API debug akışı
 
-- `npm run docker:up` → build + up
-- `npm run docker:start` → up (mevcut image ile)
-- `npm run docker:down` → down
-- `npm run docker:clean` → projeye ait container + volume + local image temizliği (tam sıfırlama)
-- `npm run docker:restart` → restart
-- `npm run docker:ps` → container list
-- `npm run docker:logs` → log takip
+Sadece PostgreSQL'i Docker ile ayağa kaldırın ve API'yi lokal başlatın.
 
-`docker:clean` notu: Postgres verisi ve upload volume dahil projeye ait Docker state silinir.
+```bash
+docker compose up -d postgres
+npm --workspace database run prisma:generate
+npm --workspace database run prisma:migrate:dev
+npm --workspace api run start:dev
+npm --workspace admin run dev
+npm --workspace web run dev
+```
 
-### Docker Davranışı Kodda Nerede Tanımlı?
+### Seçenek C: Sadece backend'i Docker'da çalıştır
 
-- `docker-compose.yml`: servisler, environment, port/volume tanımları
-- `apps/api/Dockerfile`: API build ve runtime (start:prod)
-- `package.json`: root docker scriptleri
+Daha production benzeri bir API runtime istediğinizde kullanışlıdır.
 
-## AI Usage & Development Workflow
+```bash
+npm run docker:up
+npm run docker:logs
+```
 
-Bu proje geliştirilirken agentic AI araçlarından aktif olarak yararlanılmıştır.  
-AI; yalnızca autocomplete amacıyla değil, mimari kararlar, dosya organizasyonu, API tasarımı, dynamic form yaklaşımı ve debug süreçlerinde kullanılmıştır.
+Mevcut repo yapısında `admin` ve `web` yine lokal çalışır.
 
-### Kullanım Alanları
-- Monorepo mimarisinin netleştirilmesi (`apps/api`, `apps/admin`, `apps/web`, `packages/database`)
-- Auth + role tabanlı erişim akışının iyileştirilmesi
-- Dynamic entry form yapısının kurgulanması
-- Media upload güvenlik kontrollerinin checklist’lenmesi
-- README’nin teknik kararlar perspektifinde güçlendirilmesi
+## Root Script'leri
 
-Detaylı AI çalışma notları için: **`WORKFLOW.md`**
+Kök `package.json` içinde şu script'ler vardır:
 
-## Veritabanı Modeli (Prisma)
+- `npm run seed:demo`
+- `npm run docker:up`
+- `npm run docker:start`
+- `npm run docker:down`
+- `npm run docker:clean`
+- `npm run docker:restart`
+- `npm run docker:ps`
+- `npm run docker:logs`
 
-### Temel Varlıklar
-- `User`: Admin/editör/kullanıcı hesapları
-- `ContentType`: İçerik tipleri (ör. Blog Yazısı)
-- `ContentField`: İçerik tipine ait alanlar (TEXT, RICHTEXT, MEDIA, vs.)
-- `Entry`: İçerik tipine bağlı kayıtlar
-- `EntryValue`: Entry’nin alan değerleri
-- `Media`: Medya dosyaları
+`docker:clean`, bu compose kurulumuna ait container, volume ve local image'ları temizler.
 
-### Rol ve Durumlar
+## Veritabanı ve Prisma
+
+Prisma şeması burada bulunur:
+
+- `packages/database/prisma/schema.prisma`
+
+Mevcut enum'lar:
+
 - `Role`: `ADMIN`, `EDITOR`, `USER`
 - `EntryStatus`: `DRAFT`, `PUBLISHED`
 - `FieldType`: `TEXT`, `RICHTEXT`, `NUMBER`, `BOOLEAN`, `DATE`, `MEDIA`
 
-## Register ve Rol Atama Notu
+Ana modeller:
 
-`/auth/register` endpoint’i yeni kullanıcıyı varsayılan olarak `USER` rolüyle oluşturur.  
-Admin panel (`/admin`) erişimi yalnızca `ADMIN` / `EDITOR` rollerine açıktır.
+- `User`
+- `ContentType`
+- `ContentField`
+- `Entry`
+- `EntryValue`
+- `Media`
 
-Bu nedenle kayıt olan kullanıcıların panel erişimi için rol ataması gerekir (ör. seed veya admin müdahalesi ile).
+Database paketi script'leri:
 
-## Neden `USER` Rolü Var?
+- `npm --workspace database run prisma:generate`
+- `npm --workspace database run prisma:migrate:dev`
+- `npm --workspace database run prisma:migrate:deploy`
+- `npm --workspace database run prisma:migrate:status`
+- `npm --workspace database run prisma:studio`
 
-Case içinde admin/editor ağırlığı olsa da `USER` rolünü **public web** tarafı için konumlandırdım:
-- `/auth/register` ile oluşan kullanıcılar admin paneline giremez (sadece public içerik tarafında kullanılabilir).
-- Böylece panel güvenliği bozulmadan, public taraf için gerçekçi bir kullanıcı tipi sağlanır.
+## Kimlik Doğrulama ve Yetkilendirme
 
-## Demo Kullanıcılar (Seed)
+API tarafındaki kimlik doğrulama detayları:
 
-Değerlendirici için hızlı giriş sağlamak adına demo admin/editor kullanıcıları seed ile eklenebilir:
+- JWT tabanlı kimlik doğrulama kullanılır
+- Token, `Authorization: Bearer <token>` üzerinden okunabilir
+- Token ayrıca `admin_token` isimli HttpOnly cookie'den de okunabilir
+- Korunan route'lar guard ve `@Roles(...)` ile kontrol edilir
+- Public route'lar `@Public()` ile işaretlenir
 
-```
+`/auth/register`, varsayılan olarak `USER` rolünde yeni bir kullanıcı oluşturur.
+
+Bunun anlamı:
+
+- kayıt olan kullanıcılar otomatik olarak admin paneline erişemez
+- admin paneli erişimi `ADMIN` ve `EDITOR` için tasarlanmıştır
+- rol ataması admin veya seed/kurulum akışı üzerinden yapılmalıdır
+
+## Demo Seed
+
+Demo admin/editor kullanıcıları oluşturmak için:
+
+```bash
 npm run seed:demo
 ```
 
-Demo hesaplar (varsayılan):
-- `admin@unitic.dev` / `Admin123!` (ADMIN)
-- `editor@unitic.dev` / `Editor123!` (EDITOR)
+Varsayılan demo kullanıcılar:
 
-> İstersen `.env` içindeki `SEED_*` değişkenleriyle bu bilgileri değiştirebilirsin.
+- `admin@unitic.dev` / `Admin123!` -> `ADMIN`
+- `editor@unitic.dev` / `Editor123!` -> `EDITOR`
 
-## Role Matrix (Yetki Tablosu)
+Gerekirse env ile override edebilirsiniz:
+
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_USERNAME`
+- `SEED_ADMIN_PASSWORD`
+- `SEED_EDITOR_EMAIL`
+- `SEED_EDITOR_USERNAME`
+- `SEED_EDITOR_PASSWORD`
+
+## Yetki Matrisi
 
 | Özellik | ADMIN | EDITOR | USER | Public |
 |---|---|---|---|---|
-| Admin panel login | ✅ | ✅ | ❌ | ❌ |
-| Content Type oluştur/güncelle/sil | ✅ | ❌ | ❌ | ❌ |
-| Entry oluştur/güncelle/sil | ✅ | ✅ | ❌ | ❌ |
-| Entry publish/unpublish | ✅ | ✅ | ❌ | ❌ |
-| Media upload/list | ✅ | ✅ | ❌ | ❌ |
-| Media delete | ✅ | ✅ | ❌ | ❌ |
-| User management | ✅ | ❌ | ❌ | ❌ |
-| Public içerik görüntüleme | ✅ | ✅ | ✅ | ✅ |
+| Admin panel girişi | Evet | Evet | Hayır | Hayır |
+| İçerik tipi oluştur/güncelle/sil | Evet | Hayır | Hayır | Hayır |
+| Kayıt oluştur/güncelle/sil | Evet | Evet | Hayır | Hayır |
+| Kayıt publish/unpublish | Evet | Evet | Hayır | Hayır |
+| Medya yükle/listele/sil | Evet | Evet | Hayır | Hayır |
+| Kullanıcı yönetimi | Evet | Hayır | Hayır | Hayır |
+| Public içerik görüntüleme | Evet | Evet | Evet | Evet |
 
-## API (apps/api)
+## API Özeti
 
-### Kimlik Doğrulama ve Yetkilendirme
+### Auth
 
-- JWT tabanlı kimlik doğrulama vardır.
-- Token, `Authorization: Bearer <token>` header’ı veya `admin_token` adlı HttpOnly cookie ile geçilebilir.
-- `@Public()` işaretli endpoint’ler herkese açıktır.
-- `@Roles()` ile rol kontrolü yapılır.
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/logout`
+- `GET /auth/me`
 
-### Auth Endpoint’leri (`/auth`)
+### Users
 
-1. `POST /auth/register`
-   - Yeni kullanıcı kaydı (role otomatik `USER`).
-   - Request:
-     ```json
-     {
-       "email": "ornek@domain.com",
-       "username": "ornekkullanici",
-       "password": "Sifre123!"
-     }
-     ```
-   - Response:
-     ```json
-     {
-       "ok": true,
-       "user": {
-         "id": "uuid",
-         "email": "ornek@domain.com",
-         "username": "ornekkullanici",
-         "role": "USER"
-       },
-       "message": "Kayıt oluşturuldu..."
-     }
-     ```
+- `GET /users`
+- `POST /users`
+- `PATCH /users/:id/active`
+- `PATCH /users/:id`
+- `DELETE /users/:id`
 
-2. `POST /auth/login`
-   - Admin veya editör girişi için.
-   - Başarılı olursa `admin_token` cookie set edilir.
-   - Request:
-     ```json
-     {
-       "email": "ornek@domain.com",
-       "password": "Sifre123!"
-     }
-     ```
-   - Response:
-     ```json
-     {
-       "ok": true,
-       "user": {
-         "id": "uuid",
-         "email": "ornek@domain.com",
-         "username": "ornekkullanici",
-         "role": "ADMIN"
-       }
-     }
-     ```
+Bu route'lara sadece `ADMIN` erişebilir.
 
-3. `POST /auth/logout`
-   - `admin_token` cookie temizlenir.
-   - Response:
-     ```json
-     { "ok": true }
-     ```
+### Content Types
 
-4. `GET /auth/me`
-   - Aktif kullanıcı bilgisi.
-   - Response:
-     ```json
-     {
-       "id": "uuid",
-       "email": "ornek@domain.com",
-       "username": "ornekkullanici",
-       "role": "ADMIN",
-       "isActive": true,
-       "createdAt": "2026-03-17T..."
-     }
-     ```
+- `GET /content-types`
+- `GET /content-types/:id`
+- `POST /content-types`
+- `POST /content-types/:id/fields`
+- `PATCH /content-types/:id/fields/:fieldId`
+- `DELETE /content-types/:id/fields/:fieldId`
+- `PATCH /content-types/:id`
+- `DELETE /content-types/:id`
 
-### Kullanıcı Yönetimi (`/users`) — Sadece `ADMIN`
+Okuma erişimi `ADMIN` ve `EDITOR` içindir. Mutation işlemleri sadece `ADMIN` içindir.
 
-1. `GET /users`
-   - Response:
-     ```json
-     { "data": [/* User[] */], "total": 3 }
-     ```
+### Entries
 
-2. `POST /users`
-   - Request:
-     ```json
-     {
-       "email": "a@b.com",
-       "username": "admin",
-       "password": "Sifre123!",
-       "role": "EDITOR"
-     }
-     ```
-   - Response: yeni user objesi
+- `GET /entries/content-type/:contentType`
+- `GET /entries/content-type/:contentType/status/:status`
+- `GET /entries/:id`
+- `POST /entries/content-type/:contentType`
+- `PATCH /entries/:id`
+- `PATCH /entries/:id/status`
+- `DELETE /entries/:id`
 
-3. `PATCH /users/:id/active`
-   - Request:
-     ```json
-     { "active": true }
-     ```
-   - Response: güncellenmiş user objesi
+Bu route'lar `ADMIN` ve `EDITOR` için tasarlanmıştır.
 
-4. `PATCH /users/:id`
-   - Request:
-     ```json
-     {
-       "email": "yeni@domain.com",
-       "username": "yeni",
-       "password": "YeniSifre123!",
-       "role": "ADMIN"
-     }
-     ```
-   - Response: güncellenmiş user objesi
+### Media
 
-5. `DELETE /users/:id`
-   - Response:
-     ```json
-     { "success": true }
-     ```
+- `GET /media`
+- `POST /media`
+- `DELETE /media/:id`
 
-### İçerik Tipleri (`/content-types`)
+Medya upload davranışı:
 
-1. `GET /content-types` (ADMIN, EDITOR)
-   - Response:
-     ```json
-     { "data": [/* ContentType[] */], "total": 2 }
-     ```
+- form field adı: `file`
+- maksimum boyut: `10 MB`
+- izin verilen tipler: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`
 
-2. `GET /content-types/:id` (ADMIN, EDITOR)
-   - Response: tek içerik tipi + alanları
+### Public Content
 
-3. `POST /content-types` (ADMIN)
-   - Request:
-     ```json
-     {
-       "name": "Blog Yazısı",
-       "slug": "blog-yazisi",
-       "description": "Blog içerikleri"
-     }
-     ```
-   - Response: oluşturulan içerik tipi
+- `GET /api/public`
+- `GET /api/public/all`
+- `GET /api/public/:contentType`
+- `GET /api/public/:contentType/:slug`
 
-4. `POST /content-types/:id/fields` (ADMIN)
-   - Request:
-     ```json
-     {
-       "name": "Başlık",
-       "slug": "baslik",
-       "type": "TEXT",
-       "required": true
-     }
-     ```
-   - Response: güncel içerik tipi
+Bu endpoint'ler public'tir ve sadece yayınlanmış içerikleri döndürür.
 
-5. `PATCH /content-types/:id/fields/:fieldId` (ADMIN)
-   - Request:
-     ```json
-     { "name": "Yeni Başlık", "type": "RICHTEXT" }
-     ```
-   - Response: güncel içerik tipi
+## Admin Panel
 
-6. `DELETE /content-types/:id/fields/:fieldId` (ADMIN)
-   - Response: güncel içerik tipi
+Mevcut admin uygulaması şunları içerir:
 
-7. `PATCH /content-types/:id` (ADMIN)
-   - Request:
-     ```json
-     { "name": "Yeni Ad", "slug": "yeni-slug", "description": "..." }
-     ```
-   - Response: güncellenmiş içerik tipi
+- login ve register ekranları
+- dashboard
+- içerik tipi listeleme ve detay yönetimi
+- kayıt listeleme ve detay yönetimi
+- medya kütüphanesi
+- kullanıcı yönetimi
 
-8. `DELETE /content-types/:id` (ADMIN)
-   - Response:
-     ```json
-     { "success": true }
-     ```
+Middleware davranışı:
 
-### Kayıtlar (`/entries`) — ADMIN, EDITOR
+- kimliği doğrulanmamış kullanıcılar protected route'larda `/login` sayfasına yönlendirilir
+- geçerli oturumu olan kullanıcılar auth sayfalarından içeri yönlendirilir
+- geçersiz cookie'ler otomatik temizlenir
 
-1. `GET /entries/content-type/:contentType`
-2. `GET /entries/content-type/:contentType/status/:status`
-   - Response:
-     ```json
-     { "data": [/* Entry[] */], "total": 5 }
-     ```
+## Public Web Uygulaması
 
-3. `GET /entries/:id`
-   - Response: tek entry + values
+Mevcut public uygulama davranışı:
 
-4. `POST /entries/content-type/:contentType`
-   - Request:
-     ```json
-     {
-       "slug": "blog-yazisi-1",
-       "status": "DRAFT",
-       "values": [
-         { "fieldId": "uuid", "value": "Merhaba" },
-         { "fieldId": "uuid", "mediaId": "uuid" }
-       ]
-     }
-     ```
-   - Response: oluşturulan entry + values
+- ana sayfa tüm yayınlanmış içerikleri çeker
+- detay sayfaları `contentType` ve `slug` ile veri alır
+- API'nin döndürdüğü relative medya URL'leri absolute URL'ye çevrilir
+- server-side isteklerde, daha yavaş `localhost` fallback durumlarını azaltmak için `localhost` yerine `127.0.0.1` kullanılır
 
-5. `PATCH /entries/:id`
-   - Request:
-     ```json
-     { "slug": "yeni-slug", "status": "PUBLISHED", "values": [/* ... */] }
-     ```
-   - Response: güncellenmiş entry + values
+## Docker Notları
 
-6. `PATCH /entries/:id/status`
-   - Request:
-     ```json
-     { "status": "PUBLISHED" }
-     ```
-   - Response: güncellenmiş entry
+`docker-compose.yml` şu servisleri tanımlar:
 
-7. `DELETE /entries/:id`
-   - Response:
-     ```json
-     { "success": true }
-     ```
+- `postgres` container'ı: `unitic-db`
+- `api` container'ı: `unitic-api`
 
-Notlar:
-- `MEDIA` tipli alanlarda `mediaId` zorunludur.
-- `slug` verilmezse içerik alanlarından otomatik üretilir.
-- `PUBLISHED` durumunda `publishedAt` otomatik set edilir.
+Volume kullanımı:
 
-### Medya (`/media`) — ADMIN, EDITOR
+- PostgreSQL kalıcılığı için `postgres_data`
+- yüklenen medya dosyalarının kalıcılığı için `uploads_data`
 
-1. `GET /media`
-   - Response:
-     ```json
-     { "data": [/* Media[] */], "total": 3 }
-     ```
+Docker içindeki API şu değerleri kullanır:
 
-2. `POST /media`
-   - `multipart/form-data`
-   - `file` alanı ile dosya yüklenir.
-  - 10MB limit, izinli mime type kontrolü vardır.
-  - Sadece görsel dosyaları kabul edilir: `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/svg+xml`.
-  - Video, ses, PDF ve doküman dosyaları reddedilir.
+- `DATABASE_URL=postgresql://...@postgres:5432/...`
+- `UPLOAD_DIR=/app/apps/api/uploads`
 
-3. `DELETE /media/:id` (ADMIN)
-   - Response:
-     ```json
-     { "success": true }
-     ```
+## Windows Tailwind / Lightning CSS Sorun Giderme
 
-**Upload kalıcılığı**
-- Varsayılan upload dizini: `apps/api/uploads` (değiştirilebilir: `UPLOAD_DIR`)
-- Docker ile çalıştırıldığında `uploads_data` volume bu dizine bağlıdır; konteyner yeniden başlasa da dosyalar korunur.
-- Dosya adı sunucu tarafında tamamen random üretilir (`media-<24-karakter-random>.<uzantı>`); orijinal dosya adı saklanmaz.
+Bu proje, Tailwind CSS v4'ü `@tailwindcss/postcss` üzerinden kullanıyor. Ayrıca admin uygulamasında Windows native paketi de sabitlenmiş durumda:
 
-### Public İçerik (`/api/public`)
+- `lightningcss-win32-x64-msvc`
 
-Bu endpoint’ler public ve sadece `PUBLISHED` içerikleri döner.
+Windows tarafında `lightningcss` kurulumunda veya çözümlemesinde; npm workspace yapısı, optional/native paket çözümlemesi, lockfile durumu ya da platforma özgü bağımlılık farkları nedeniyle hata görülebilir.
 
-1. `GET /api/public`
-   - Yayınlanmış içerik tipleri listesi
-2. `GET /api/public/all`
-   - Tüm yayınlar içerik tipine göre gruplanmış
-3. `GET /api/public/:contentType`
-   - İçerik tipine göre yayın listesi
-4. `GET /api/public/:contentType/:slug`
-   - Yayınlanan tek içerik detayı
+`lightningcss`, `tailwindcss` veya Windows native binding hataları alırsanız:
 
-## Admin Panel (apps/admin)
+1. Kurulum bozulduysa `node_modules` ve lockfile'ı temizleyin.
+2. Repo kökünden temiz bir `npm install` çalıştırın.
+3. Kurulumun gerçekten Windows ortamında yapıldığından emin olun; Linux/macOS'tan taşınmış `node_modules` ile devam etmeyin.
+4. Sorun devam ederse şu tartışmayı inceleyin:
 
-### Yapılabilenler
+https://github.com/tailwindlabs/tailwindcss/discussions/16653
 
-- Kullanıcı girişi / kayıt
-- Dashboard (kullanıcı, içerik tipi, medya, yayın istatistikleri)
-- İçerik tipi oluşturma, düzenleme, silme
-- İçerik tipi alanları (field) ekleme, düzenleme, silme
-- Kayıt oluşturma, listeleme, filtreleme, güncelleme, silme
-- Medya yükleme, listeleme, silme
-- Kullanıcı yönetimi (sadece ADMIN)
+Windows tarafındaki workaround ve paket çözümleme geçmişi için referans verilmesi gereken doğru tartışma budur.
 
-### Erişim Kuralları
+## AI Destekli Geliştirme
 
-- `ADMIN`: Tüm panel yetkileri
-- `EDITOR`: İçerik ve medya yönetimi, kullanıcı yönetimi yok
-- `USER`: Admin paneline giriş yapamaz
+Bu proje; mimari kararlar, iterasyon, debugging ve geliştirme hızlandırma süreçlerinde agentic AI araçlarının desteğiyle geliştirildi.
 
-UI kanıtları:
-- Editor rolü `Kullanıcılar` menüsünü görmez ve kullanıcı yönetimi ekranına erişemez.
-- İçerik tipi oluşturma/düzenleme alanları admin rolü olmayan kullanıcılar için kapatılır ve uyarı mesajı gösterilir.
+Süreç notları için:
 
-Admin panel, `admin_token` cookie ile oturum doğrular. Next.js middleware ile korumalı sayfalar yönlendirilir.
+- `WORKFLOW.md`
 
-## Web (apps/web)
+## Lisans
 
-Public sitede sadece yayınlanan içerikler gösterilir:
-
-- Ana sayfa tüm yayınları listeler (`GET /api/public/all`)
-- Detay sayfası belirli içerik tipine ve slug’a göre içerik gösterir
-- Medya alanları varsa, görsel veya dosya linkiyle render edilir
-
-## Prisma Nasıl Ayağa Kaldırılır, Amacı Nedir?
-
-Prisma, veritabanı şemasını tanımlar ve migration yönetir.
-
-Amaçlar:
-- Schema üzerinden güvenli TypeScript client üretmek
-- Migration’ları sürümlemek
-- Veritabanı değişikliklerini tutarlı biçimde uygulamak
-
-Temel komutlar `packages/database` altında:
-- `npm run prisma:generate`
-- `npm run prisma:migrate:dev`
-- `npm run prisma:migrate:status`
-- `npm run prisma:studio`
-
-## Docker Bu Projede Ne İşe Yarıyor?
-
-`docker-compose.yml` ile PostgreSQL ve API birlikte ayağa kaldırılır. Bu sayede:
-- Lokal DB kurulumuna gerek kalmaz
-- Tutarlı bir veritabanı ortamı sağlanır
-- API tek komutla çalıştırılabilir
-- `uploads_data` volume ile medya dosyaları kalıcı hale gelir
-
-## İmza
-
-made by devilyxrd
+Detaylar için `LICENSE` dosyasına bakın.
