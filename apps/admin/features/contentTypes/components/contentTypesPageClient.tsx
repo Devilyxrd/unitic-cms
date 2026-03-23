@@ -4,17 +4,24 @@ import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { ROUTES } from "@/constants/routes";
-import { createContentType, deleteContentType, listContentTypes, updateContentType } from "@/features/contentTypes/api/contentTypes";
-import { listEntries } from "@/features/entries/api/entries";
+import { getCurrentUser } from "@/features/auth/services/auth.service";
+import {
+  createContentType,
+  deleteContentType,
+  listContentTypes,
+  updateContentType,
+} from "@/features/contentTypes/services/content-types.service";
+import { listEntries } from "@/features/entries/services/entries.service";
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { apiClient } from "@/shared/lib/apiClient";
 import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { slugify } from "@/shared/utils/helpers";
-import type { ContentType, Entry, User } from "@/types";
+import type { ContentType } from "@/features/contentTypes/types/content-type.types";
+import type { Entry } from "@/features/entries/types/entry.types";
+import type { User } from "@/features/users/types/user.types";
 
 type ContentTypeEntriesSummary = {
   total: number;
@@ -48,7 +55,7 @@ export function ContentTypesPageClient() {
 
   const loadCurrentUser = useCallback(async () => {
     try {
-      const me = await apiClient<User>("/auth/me", { method: "GET" });
+      const me = await getCurrentUser();
       setCurrentUser(me);
       setAuthError(null);
     } catch (err) {

@@ -41,7 +41,7 @@ export default function NotFound() {
 
       <section className="api-note fade-up fade-up-delay-1 mt-6 p-5 text-sm text-slate-300">
         <p className="font-semibold uppercase tracking-[0.08em] text-slate-200">Ne yapabilirsin?</p>
-        <p className="mt-2">İçeriği admin panelde tekrar PUBLISHED yap, ardından bu URL'yi yenile.</p>
+        <p className="mt-2">İçeriği admin panelde tekrar PUBLISHED yap, ardından bu URL&apos;yi yenile.</p>
         <p className="mt-1 text-slate-400">Silinmiş kayıtlar web tarafında artık cache beklemeden anlık olarak 404 döner.</p>
       </section>
     </div>

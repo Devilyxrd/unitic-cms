@@ -3,14 +3,21 @@
 import { FormEvent, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-import { createUser, deleteUser, listUsers, setUserActive, updateUser } from "@/features/users/api/users";
+import { getCurrentUser } from "@/features/auth/services/auth.service";
+import {
+  createUser,
+  deleteUser,
+  listUsers,
+  setUserActive,
+  updateUser,
+} from "@/features/users/services/users.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { apiClient } from "@/shared/lib/apiClient";
 import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
-import type { Role, User } from "@/types";
+import type { User } from "@/features/users/types/user.types";
+import type { Role } from "@/shared/types/core";
 
 const ROLE_OPTIONS: Role[] = ["ADMIN", "EDITOR", "USER"];
 
@@ -49,7 +56,7 @@ export function UsersPageClient() {
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
-        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        const me = await getCurrentUser();
         setCurrentUser(me);
       } finally {
         setAuthChecked(true);

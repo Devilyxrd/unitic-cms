@@ -7,26 +7,18 @@ import {
   deleteMedia,
   listMedia,
   MAX_MEDIA_FILE_SIZE,
+  resolveMediaUrl,
   uploadMedia,
   validateMediaFile,
-} from "@/features/media/api/media";
+} from "@/features/media/services/media.service";
+import { getCurrentUser } from "@/features/auth/services/auth.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { apiClient } from "@/shared/lib/apiClient";
 import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
-import type { MediaItem, User } from "@/types";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-function resolveMediaUrl(url: string) {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
-  }
-
-  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
-}
+import type { MediaItem } from "@/features/media/types/media.types";
+import type { User } from "@/features/users/types/user.types";
 
 export function MediaPageClient() {
   const { toasts, dismissToast, showError, showSuccess } = useToast();
@@ -42,7 +34,7 @@ export function MediaPageClient() {
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
-        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        const me = await getCurrentUser();
         setCurrentUser(me);
       } catch {
         setCurrentUser(null);

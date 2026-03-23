@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { ROUTES } from "../../constants/routes";
-import { logout } from "@/features/auth/api/login";
+import { logout } from "@/features/auth/services/auth.service";
 import { apiClient } from "@/shared/lib/apiClient";
 import { Footer } from "./footer";
 import { Header } from "./header";

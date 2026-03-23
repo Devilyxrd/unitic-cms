@@ -1,5 +1,9 @@
 import { apiClient } from "@/shared/lib/apiClient";
-import type { ApiListResponse, MediaItem } from "@/types";
+import { normalizeListResponse } from "@/shared/utils/normalizeListResponse";
+import type { ApiListResponse } from "@/shared/types/core";
+import type { MediaItem } from "@/features/media/types/media.types";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export const MAX_MEDIA_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -35,23 +39,23 @@ export function validateMediaFile(file: File): string | null {
   return null;
 }
 
-function normalizeListResponse<T>(response: T[] | ApiListResponse<T> | null | undefined): T[] {
-  if (Array.isArray(response)) {
-    return response;
+export function resolveMediaUrl(url: string) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
   }
 
-  if (response && Array.isArray(response.data)) {
-    return response.data;
-  }
-
-  return [];
+  return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 export async function listMedia(token: string | null) {
-  const response = await apiClient<MediaItem[] | ApiListResponse<MediaItem> | null>("/media", {
-    token: token ?? undefined,
-    method: "GET",
-  });
+  const response = await apiClient<MediaItem[] | ApiListResponse<MediaItem> | null>(
+    "/media",
+    {
+      token: token ?? undefined,
+      method: "GET",
+    },
+  );
+
   return normalizeListResponse(response);
 }
 
@@ -64,7 +68,7 @@ export async function uploadMedia(file: File, token: string | null) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"}/media`, {
+  const response = await fetch(`${API_BASE_URL}/media`, {
     method: "POST",
     credentials: "include",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -72,7 +76,9 @@ export async function uploadMedia(file: File, token: string | null) {
   });
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    const body = (await response.json().catch(() => null)) as
+      | { message?: string }
+      | null;
     throw new Error(body?.message ?? "Medya yükleme başarısız.");
   }
 

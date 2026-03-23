@@ -1,47 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { fetchPublicEntry } from "@/lib/publicApi";
+import { fetchPublicEntry } from "@/features/public-content/services/public-content.service";
+import {
+  formatFieldValue,
+  formatPublishedDate,
+  getEntryDetailView,
+} from "@/features/public-content/utils/public-content";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ contentType: string; slug: string }>;
 };
-
-function formatValue(fieldType: string, value: unknown) {
-  if (fieldType === "BOOLEAN") {
-    return value ? "Evet" : "Hayır";
-  }
-
-  if (fieldType === "DATE" && typeof value === "string") {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("tr-TR", { dateStyle: "medium" });
-  }
-
-  if (typeof value === "number") {
-    return new Intl.NumberFormat("tr-TR").format(value);
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (value === null || value === undefined) {
-    return "-";
-  }
-
-  return JSON.stringify(value);
-}
-
-function normalizeForMatch(value: string) {
-  return value
-    .toLocaleLowerCase("tr-TR")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ı/g, "i")
-    .trim();
-}
 
 export default async function ContentPage({ params }: Props) {
   const resolvedParams = await params;
@@ -51,50 +22,7 @@ export default async function ContentPage({ params }: Props) {
     notFound();
   }
 
-  const sortedValues = [...entry.values].sort((a, b) => a.field.order - b.field.order);
-  const titleCandidates = ["title", "baslik", "basligi", "heading", "headline"];
-  const titleFieldValue = sortedValues.find(
-    (item) => {
-      if (typeof item.value !== "string" || item.value.trim().length === 0) {
-        return false;
-      }
-
-      const normalizedSlug = normalizeForMatch(item.field.slug);
-      const normalizedName = normalizeForMatch(item.field.name);
-
-      return titleCandidates.some(
-        (candidate) =>
-          normalizedSlug === candidate ||
-          normalizedSlug.includes(candidate) ||
-          normalizedName.includes(candidate),
-      );
-    },
-  );
-  const firstTextValue = sortedValues.find(
-    (item) =>
-      (item.field.type === "TEXT" || item.field.type === "RICHTEXT") &&
-      typeof item.value === "string" &&
-      item.value.trim().length > 0,
-  );
-  const pageTitle =
-    typeof titleFieldValue?.value === "string" && titleFieldValue.value.trim().length > 0
-      ? titleFieldValue.value
-      : typeof firstTextValue?.value === "string" && firstTextValue.value.trim().length > 0
-        ? firstTextValue.value
-        : "İçerik Detayı";
-  const leadImage = sortedValues.find(
-    (item) => item.field.type === "MEDIA" && item.media?.mimeType.startsWith("image/"),
-  )?.media;
-  const textBlocks = sortedValues.filter(
-    (item) =>
-      item.id !== titleFieldValue?.id &&
-      (item.field.type === "TEXT" || item.field.type === "RICHTEXT") &&
-      typeof item.value === "string" &&
-      item.value.trim().length > 0,
-  );
-  const fallbackBlocks = sortedValues.filter(
-    (item) => item.field.type !== "MEDIA" && item.field.type !== "TEXT" && item.field.type !== "RICHTEXT",
-  );
+  const { fallbackBlocks, leadImage, pageTitle, textBlocks } = getEntryDetailView(entry);
 
   return (
     <div className="page-shell">
@@ -110,7 +38,7 @@ export default async function ContentPage({ params }: Props) {
         </h1>
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
           <span className="pill">{resolvedParams.contentType}</span>
-          <span>{entry.publishedAt ? new Date(entry.publishedAt).toLocaleDateString("tr-TR", { dateStyle: "medium" }) : "Yayın tarihi yok"}</span>
+          <span>{formatPublishedDate(entry.publishedAt)}</span>
         </div>
       </header>
 
@@ -136,7 +64,7 @@ export default async function ContentPage({ params }: Props) {
               {textBlocks.length === 0
                 ? fallbackBlocks.map((item) => (
                     <p key={item.id} className="whitespace-pre-wrap">
-                      {formatValue(item.field.type, item.value)}
+                      {formatFieldValue(item.field.type, item.value)}
                     </p>
                   ))
                 : null}

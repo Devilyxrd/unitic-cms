@@ -1,73 +1,9 @@
-export type FieldType =
-  | "TEXT"
-  | "RICHTEXT"
-  | "NUMBER"
-  | "BOOLEAN"
-  | "DATE"
-  | "MEDIA";
-
-export type PublicField = {
-  id: string;
-  name: string;
-  slug: string;
-  type: FieldType;
-  required: boolean;
-  order: number;
-};
-
-export type PublicMedia = {
-  id: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-  url: string;
-};
-
-export type PublicEntryValue = {
-  id: string;
-  value: unknown;
-  fieldId: string;
-  mediaId?: string | null;
-  field: PublicField;
-  media?: PublicMedia | null;
-};
-
-export type PublicEntry = {
-  id: string;
-  slug: string | null;
-  createdAt: string;
-  updatedAt: string;
-  publishedAt: string | null;
-  values: PublicEntryValue[];
-};
-
-export type PublicListResponse<T> = {
-  data: T[];
-  total: number;
-};
-
-export type PublicContentTypeSummary = {
-  id: string;
-  name: string;
-  slug: string;
-  totalPublishedEntries: number;
-};
-
-export type PublicAllPublishedGroup = {
-  contentType: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  entries: PublicEntry[];
-  totalPublishedEntries: number;
-};
-
-export type PublicAllPublishedResponse = {
-  data: PublicAllPublishedGroup[];
-  totalContentTypes: number;
-  totalEntries: number;
-};
+import type {
+  PublicAllPublishedResponse,
+  PublicContentTypeSummary,
+  PublicEntry,
+  PublicListResponse,
+} from "@/features/public-content/types/public-content.types";
 
 const PUBLIC_API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
@@ -84,10 +20,10 @@ const LIVE_FETCH_OPTIONS: RequestInit = {
 function resolveMediaUrls(entry: PublicEntry): PublicEntry {
   return {
     ...entry,
-    values: entry.values.map((v) =>
-      v.media && v.media.url.startsWith("/")
-        ? { ...v, media: { ...v.media, url: `${PUBLIC_API_BASE}${v.media.url}` } }
-        : v,
+    values: entry.values.map((value) =>
+      value.media && value.media.url.startsWith("/")
+        ? { ...value, media: { ...value.media, url: `${PUBLIC_API_BASE}${value.media.url}` } }
+        : value,
     ),
   };
 }
@@ -148,7 +84,7 @@ export async function fetchPublicEntry(contentType: string, slug: string) {
   }
 
   if (!response.ok) {
-    throw new Error("İçerik alınamadı.");
+    throw new Error("Icerik alinamadi.");
   }
 
   return resolveMediaUrls((await response.json()) as PublicEntry);
