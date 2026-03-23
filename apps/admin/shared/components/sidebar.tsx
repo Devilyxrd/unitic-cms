@@ -6,9 +6,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ApiClientError,
-  apiClient,
 } from "@/shared/lib/apiClient";
-import type { Role, User } from "@/types";
+import { getCurrentUser, logout } from "@/features/auth/services/auth.service";
+import type { User } from "@/features/users/types/user.types";
+import type { Role } from "@/shared/types/core";
 import {
   type LucideIcon,
   Image as ImageIcon,
@@ -21,7 +22,6 @@ import {
 } from "lucide-react";
 
 import { NAV_ITEMS, ROUTES } from "@/constants/routes";
-import { logout } from "@/features/auth/api/login";
 import { cn } from "@/shared/utils/helpers";
 
 type SidebarProps = {
@@ -46,7 +46,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     const loadMe = async () => {
       try {
-        const me = await apiClient<User>("/auth/me", { method: "GET" });
+        const me = await getCurrentUser();
         if (!cancelled) {
           setCurrentUser(me);
         }

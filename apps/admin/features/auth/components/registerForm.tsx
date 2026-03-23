@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ROUTES } from "@/constants/routes";
-import { register } from "@/features/auth/api/register";
+import { register } from "@/features/auth/services/auth.service";
 
 export function RegisterForm() {
   const router = useRouter();

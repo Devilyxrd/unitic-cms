@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Pacifico } from "next/font/google";
 import Link from "next/link";
-import { ScrollToContentLink } from "@/components/scrollToContentLink";
+import { ScrollToContentLink } from "@/features/public-content/components/scroll-to-content-link";
 import "./globals.css";
 
 const logoFont = Pacifico({

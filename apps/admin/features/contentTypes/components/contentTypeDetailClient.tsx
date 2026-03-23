@@ -2,16 +2,26 @@
 
 import { FormEvent, Fragment, useCallback, useEffect, useState } from "react";
 
-import { addContentField, deleteContentField, getContentTypeById, updateContentField } from "@/features/contentTypes/api/contentTypes";
+import { getCurrentUser } from "@/features/auth/services/auth.service";
+import {
+  addContentField,
+  deleteContentField,
+  getContentTypeById,
+  updateContentField,
+} from "@/features/contentTypes/services/content-types.service";
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { apiClient } from "@/shared/lib/apiClient";
 import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { slugify } from "@/shared/utils/helpers";
-import type { ContentField, ContentType, FieldType, User } from "@/types";
+import type {
+  ContentField,
+  ContentType,
+} from "@/features/contentTypes/types/content-type.types";
+import type { User } from "@/features/users/types/user.types";
+import type { FieldType } from "@/shared/types/core";
 
 const FIELD_TYPES: FieldType[] = ["TEXT", "RICHTEXT", "NUMBER", "BOOLEAN", "DATE", "MEDIA"];
 
@@ -66,7 +76,7 @@ export function ContentTypeDetailClient({ id }: Props) {
 
   const loadCurrentUser = useCallback(async () => {
     try {
-      const me = await apiClient<User>("/auth/me", { method: "GET" });
+      const me = await getCurrentUser();
       setCurrentUser(me);
       setAuthError(null);
     } catch (err) {

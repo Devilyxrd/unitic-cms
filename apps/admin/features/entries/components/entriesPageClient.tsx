@@ -3,16 +3,23 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
-import { createEntry, deleteEntry, listEntries } from "@/features/entries/api/entries";
-import { listMedia } from "@/features/media/api/media";
+import { listContentTypes } from "@/features/contentTypes/services/content-types.service";
+import {
+  createEntry,
+  deleteEntry,
+  listEntries,
+} from "@/features/entries/services/entries.service";
+import { listMedia } from "@/features/media/services/media.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
 import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { BackButton } from "@/shared/components/backButton";
-import type { ContentField, Entry, EntryStatus, MediaItem } from "@/types";
+import type { ContentField } from "@/features/contentTypes/types/content-type.types";
+import type { Entry } from "@/features/entries/types/entry.types";
+import type { MediaItem } from "@/features/media/types/media.types";
+import type { EntryStatus } from "@/shared/types/core";
 
 const STATUS_OPTIONS: EntryStatus[] = ["DRAFT", "PUBLISHED"];
 

@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ROUTES } from "@/constants/routes";
-import { listContentTypes } from "@/features/contentTypes/api/contentTypes";
-import { listEntries } from "@/features/entries/api/entries";
-import { listMedia } from "@/features/media/api/media";
-import { listUsers } from "@/features/users/api/users";
+import { getCurrentUser } from "@/features/auth/services/auth.service";
+import { listContentTypes } from "@/features/contentTypes/services/content-types.service";
+import { listEntries } from "@/features/entries/services/entries.service";
+import { listMedia } from "@/features/media/services/media.service";
+import { listUsers } from "@/features/users/services/users.service";
 import { ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
-import { apiClient } from "@/shared/lib/apiClient";
-import type { Entry, User } from "@/types";
+import type { Entry } from "@/features/entries/types/entry.types";
+import type { User } from "@/features/users/types/user.types";
 
 type DashboardStats = {
   userCount: number;
@@ -61,7 +62,7 @@ export function DashboardPageClient() {
     setError(null);
 
     try {
-      const me = await apiClient<User>("/auth/me", { method: "GET" }).catch(() => null);
+      const me = await getCurrentUser().catch(() => null);
       const isAdmin = me?.role === "ADMIN";
 
       const [users, contentTypes, media] = await Promise.all([

@@ -3,7 +3,7 @@
 import { MouseEvent, ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-type Props = {
+type ScrollToContentLinkProps = {
   className?: string;
   children: ReactNode;
 };
@@ -25,7 +25,10 @@ function scrollToContentSection() {
   });
 }
 
-export function ScrollToContentLink({ className, children }: Props) {
+export function ScrollToContentLink({
+  className,
+  children,
+}: ScrollToContentLinkProps) {
   const pathname = usePathname();
   const router = useRouter();
 

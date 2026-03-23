@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-import { login, type LoginPayload, type LoginResponse } from "../api/login";
+import {
+  login,
+  type LoginPayload,
+  type LoginResponse,
+} from "@/features/auth/services/auth.service";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);
