@@ -12,7 +12,6 @@ import {
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { slugify } from "@/shared/utils/helpers";
@@ -95,7 +94,7 @@ export function ContentTypeDetailClient({ id }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const data = await getContentTypeById(id, getAuthToken());
+      const data = await getContentTypeById(id);
       setContentType(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "İçerik tipi detayı yüklenemedi.");
@@ -158,7 +157,6 @@ export function ContentTypeDetailClient({ id }: Props) {
           type: fieldType,
           required,
         },
-        getAuthToken(),
       );
       setFieldName("");
       setFieldSlug("");
@@ -226,7 +224,6 @@ export function ContentTypeDetailClient({ id }: Props) {
           type: editFieldType,
           required: editFieldRequired,
         },
-        getAuthToken(),
       );
       showSuccess("Alan güncellendi", `${field.name} kaydedildi.`);
       cancelEditingField();
@@ -254,7 +251,7 @@ export function ContentTypeDetailClient({ id }: Props) {
 
     setDeletingFieldId(field.id);
     try {
-      await deleteContentField(id, field.id, getAuthToken());
+      await deleteContentField(id, field.id);
       showSuccess("Alan silindi", `${field.name} listeden kaldırıldı.`);
       await load();
     } catch (err) {

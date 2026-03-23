@@ -11,18 +11,16 @@ export class ApiClientError extends Error {
 }
 
 type ApiClientOptions = RequestInit & {
-  token?: string;
 };
 
 export async function apiClient<T>(path: string, options?: ApiClientOptions): Promise<T> {
-  const { token, headers, ...rest } = options ?? {};
+  const { headers, ...rest } = options ?? {};
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(headers ?? {}),
     },
     cache: "no-store",

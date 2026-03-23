@@ -8,7 +8,6 @@ import { listMedia } from "@/features/media/services/media.service";
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { useToast } from "@/shared/hooks/useToast";
 import type { ContentField } from "@/features/contentTypes/types/content-type.types";
 import type { Entry } from "@/features/entries/types/entry.types";
@@ -69,11 +68,10 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const token = getAuthToken();
       const [data, allContentTypes, media] = await Promise.all([
-        getEntryById(entryId, token),
-        listContentTypes(token),
-        listMedia(token),
+        getEntryById(entryId),
+        listContentTypes(),
+        listMedia(),
       ]);
 
       const currentContentType = allContentTypes.find((item) => item.slug === contentType);
@@ -288,7 +286,6 @@ export function EntryDetailClient({ entryId, contentType }: Props) {
           status,
           values,
         },
-        getAuthToken(),
       );
 
       showSuccess("Kayıt güncellendi", "Değişiklikler kaydedildi.");

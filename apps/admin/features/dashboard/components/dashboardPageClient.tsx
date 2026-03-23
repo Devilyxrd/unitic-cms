@@ -66,16 +66,16 @@ export function DashboardPageClient() {
       const isAdmin = me?.role === "ADMIN";
 
       const [users, contentTypes, media] = await Promise.all([
-        isAdmin ? listUsers(null) : Promise.resolve([]),
-        listContentTypes(null),
-        listMedia(null),
+        isAdmin ? listUsers() : Promise.resolve([]),
+        listContentTypes(),
+        listMedia(),
       ]);
 
       const entryCollections = await Promise.all(
         contentTypes.map(async (contentType) => {
           const [allEntries, publishedEntries] = await Promise.all([
-            listEntries({ contentTypeSlug: contentType.slug }, null).catch(() => []),
-            listEntries({ contentTypeSlug: contentType.slug, status: "PUBLISHED" }, null).catch(() => []),
+            listEntries({ contentTypeSlug: contentType.slug }).catch(() => []),
+            listEntries({ contentTypeSlug: contentType.slug, status: "PUBLISHED" }).catch(() => []),
           ]);
 
           return {

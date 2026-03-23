@@ -47,11 +47,10 @@ export function resolveMediaUrl(url: string) {
   return `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-export async function listMedia(token: string | null) {
+export async function listMedia() {
   const response = await apiClient<MediaItem[] | ApiListResponse<MediaItem> | null>(
     "/media",
     {
-      token: token ?? undefined,
       method: "GET",
     },
   );
@@ -59,7 +58,7 @@ export async function listMedia(token: string | null) {
   return normalizeListResponse(response);
 }
 
-export async function uploadMedia(file: File, token: string | null) {
+export async function uploadMedia(file: File) {
   const validationError = validateMediaFile(file);
   if (validationError) {
     throw new Error(validationError);
@@ -71,7 +70,6 @@ export async function uploadMedia(file: File, token: string | null) {
   const response = await fetch(`${API_BASE_URL}/media`, {
     method: "POST",
     credentials: "include",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: formData,
   });
 
@@ -85,9 +83,8 @@ export async function uploadMedia(file: File, token: string | null) {
   return (await response.json()) as MediaItem;
 }
 
-export async function deleteMedia(id: string, token: string | null) {
+export async function deleteMedia(id: string) {
   return apiClient<{ success: boolean }>(`/media/${id}`, {
-    token: token ?? undefined,
     method: "DELETE",
   });
 }

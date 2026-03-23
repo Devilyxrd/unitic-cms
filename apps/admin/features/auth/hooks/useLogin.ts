@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 
-import {
-  login,
-  type LoginPayload,
-  type LoginResponse,
-} from "@/features/auth/services/auth.service";
+import { login } from "@/features/auth/services/auth.service";
+import type { LoginPayload, LoginResponse } from "@/features/auth/types/auth.types";
 
 export function useLogin() {
   const [loading, setLoading] = useState(false);

@@ -13,7 +13,6 @@ import {
 } from "@/features/users/services/users.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import type { User } from "@/features/users/types/user.types";
@@ -70,7 +69,7 @@ export function UsersPageClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listUsers(getAuthToken());
+      const data = await listUsers();
       setUsers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kullanıcılar yüklenemedi.");
@@ -108,7 +107,7 @@ export function UsersPageClient() {
     }
 
     try {
-      await createUser({ email, username, password, role }, getAuthToken());
+      await createUser({ email, username, password, role });
       setEmail("");
       setUsername("");
       setPassword("");
@@ -128,7 +127,7 @@ export function UsersPageClient() {
     setUpdatingUserId(user.id);
 
     try {
-      await setUserActive(user.id, !user.isActive, getAuthToken());
+      await setUserActive(user.id, !user.isActive);
       showSuccess(
         user.isActive ? "Kullanıcı pasife alındı" : "Kullanıcı aktifleştirildi",
         `${user.username} güncellendi.`,
@@ -193,7 +192,7 @@ export function UsersPageClient() {
         ...(result.value.password ? { password: result.value.password } : {}),
       };
 
-      await updateUser(user.id, payload, getAuthToken());
+      await updateUser(user.id, payload);
       showSuccess("Kullanici guncellendi", `${user.username} bilgileri kaydedildi.`);
       await load();
     } catch (err) {
@@ -218,7 +217,7 @@ export function UsersPageClient() {
 
     setDeletingUserId(user.id);
     try {
-      await deleteUser(user.id, getAuthToken());
+      await deleteUser(user.id);
       showSuccess("Kullanici silindi", `${user.username} listeden kaldirildi.`);
       await load();
     } catch (err) {

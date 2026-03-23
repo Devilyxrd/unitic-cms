@@ -12,7 +12,6 @@ import {
 import { listMedia } from "@/features/media/services/media.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { BackButton } from "@/shared/components/backButton";
@@ -82,7 +81,6 @@ export function EntriesPageClient({ contentType }: Props) {
     try {
       const data = await listEntries(
         { contentTypeSlug: contentType, ...(statusFilter !== "ALL" ? { status: statusFilter } : {}) },
-        getAuthToken(),
       );
       setItems(data);
     } catch (err) {
@@ -99,7 +97,7 @@ export function EntriesPageClient({ contentType }: Props) {
     setError(null);
 
     try {
-      const [allContentTypes, media] = await Promise.all([listContentTypes(getAuthToken()), listMedia(getAuthToken())]);
+      const [allContentTypes, media] = await Promise.all([listContentTypes(), listMedia()]);
       const current = allContentTypes.find((item) => item.slug === contentType);
 
       if (!current) {
@@ -233,7 +231,6 @@ export function EntriesPageClient({ contentType }: Props) {
           status,
           values,
         },
-        getAuthToken(),
       );
 
       setSlug("");
@@ -266,7 +263,7 @@ export function EntriesPageClient({ contentType }: Props) {
 
     setDeletingEntryId(entryId);
     try {
-      await deleteEntry(entryId, getAuthToken());
+      await deleteEntry(entryId);
       showSuccess("Kayıt silindi", "Kayıt listeden kaldırıldı.");
       await loadEntries();
     } catch (err) {
