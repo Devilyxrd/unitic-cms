@@ -15,7 +15,6 @@ import { listEntries } from "@/features/entries/services/entries.service";
 import { BackButton } from "@/shared/components/backButton";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import { slugify } from "@/shared/utils/helpers";
@@ -74,12 +73,12 @@ export function ContentTypesPageClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listContentTypes(getAuthToken());
+      const data = await listContentTypes();
       setItems(data);
 
       const entrySummaries = await Promise.all(
         data.map(async (contentType) => {
-          const entries = await listEntries({ contentTypeSlug: contentType.slug }, getAuthToken());
+          const entries = await listEntries({ contentTypeSlug: contentType.slug });
           return [
             contentType.id,
             {
@@ -137,7 +136,7 @@ export function ContentTypesPageClient() {
         return;
       }
 
-      await createContentType({ name, slug: normalizedSlug, description }, getAuthToken());
+      await createContentType({ name, slug: normalizedSlug, description });
       setName("");
       setSlug("");
       setSlugEdited(false);
@@ -199,7 +198,6 @@ export function ContentTypesPageClient() {
           slug: normalizedSlug,
           description: editDescription.trim(),
         },
-        getAuthToken(),
       );
       showSuccess("İçerik tipi güncellendi", `${item.name} kaydedildi.`);
       cancelEditing();
@@ -226,7 +224,7 @@ export function ContentTypesPageClient() {
 
     setDeletingId(item.id);
     try {
-      await deleteContentType(item.id, getAuthToken());
+      await deleteContentType(item.id);
       showSuccess("İçerik tipi silindi", `${item.name} listeden kaldırıldı.`);
       await load();
     } catch (err) {

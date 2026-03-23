@@ -10,7 +10,7 @@ async function hasValidSession(token: string) {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Cookie: `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
       },
       cache: "no-store",
     });

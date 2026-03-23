@@ -1,6 +1,7 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
+import { getAuthTokenTtlSeconds } from '../../common/constants/auth';
 import { AuthService } from './auth.service';
 
 jest.mock('bcryptjs', () => ({
@@ -57,6 +58,17 @@ describe('AuthService', () => {
         role: Role.ADMIN,
       },
     });
+    expect(jwtServiceMock.signAsync).toHaveBeenCalledWith(
+      {
+        id: 'user-1',
+        email: 'admin@unitic.dev',
+        role: Role.ADMIN,
+      },
+      {
+        expiresIn: getAuthTokenTtlSeconds(),
+        secret: expect.any(String),
+      },
+    );
   });
 
   it('registers user with USER role and returns user payload', async () => {

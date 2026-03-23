@@ -7,6 +7,10 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import {
+  AUTH_COOKIE_NAME,
+  getAuthCookieMaxAgeMs,
+} from '../../common/constants/auth';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { AuthUser } from '../../common/types/auth-user';
@@ -22,10 +26,10 @@ export class AuthController {
   private getCookieOptions() {
     return {
       httpOnly: true,
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 1000 * 60 * 60 * 24,
+      maxAge: getAuthCookieMaxAgeMs(),
     };
   }
 
@@ -63,7 +67,7 @@ export class AuthController {
   ) {
     const result = await this.authService.login(body.email, body.password);
 
-    res.cookie('admin_token', result.token, this.getCookieOptions());
+    res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
 
     return {
       ok: true,
@@ -79,7 +83,7 @@ export class AuthController {
   })
   @ApiOkResponse({ description: 'Çıkış başarılı.' })
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('admin_token', this.getCookieOptions());
+    res.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
     return { ok: true };
   }
 

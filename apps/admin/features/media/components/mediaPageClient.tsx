@@ -14,7 +14,6 @@ import {
 import { getCurrentUser } from "@/features/auth/services/auth.service";
 import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/shared/components/stateBlocks";
 import { ToastStack } from "@/shared/components/toastStack";
-import { getAuthToken } from "@/shared/lib/authToken";
 import { confirmDestructiveAction } from "@/shared/lib/confirmDialog";
 import { useToast } from "@/shared/hooks/useToast";
 import type { MediaItem } from "@/features/media/types/media.types";
@@ -50,7 +49,7 @@ export function MediaPageClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listMedia(getAuthToken());
+      const data = await listMedia();
       setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Medya yüklenemedi.");
@@ -95,7 +94,7 @@ export function MediaPageClient() {
     setError(null);
 
     try {
-      await uploadMedia(file, getAuthToken());
+      await uploadMedia(file);
       showSuccess("Dosya yüklendi", "Medya kütüphanesi güncellendi.");
       await load();
     } catch (err) {
@@ -125,7 +124,7 @@ export function MediaPageClient() {
     setError(null);
 
     try {
-      await deleteMedia(item.id, getAuthToken());
+      await deleteMedia(item.id);
       showSuccess("Medya silindi", `${item.filename} kutuphaneden kaldirildi.`);
       await load();
     } catch (err) {

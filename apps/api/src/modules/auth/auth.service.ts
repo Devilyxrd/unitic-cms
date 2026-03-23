@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, Role } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
+import { getAuthTokenTtlSeconds } from '../../common/constants/auth';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/types/auth-user';
 import { RegisterDto } from './dto/register.dto';
@@ -128,6 +129,7 @@ export class AuthService {
     };
 
     const token = await this.jwtService.signAsync(payload, {
+      expiresIn: getAuthTokenTtlSeconds(),
       secret: process.env.JWT_SECRET ?? 'dev-secret',
     });
 
